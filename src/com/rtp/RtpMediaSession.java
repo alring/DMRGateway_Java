@@ -81,7 +81,7 @@ public class RtpMediaSession implements RtpListener
         lastSentTime = System.nanoTime();
 	rtpSession.addRtpListener(this);
 	rtpSession.receiveRTPPackets();
-
+       
     //    soundInOut.closeLines();
         soundInOut.OpenMicLine();
         direction=0;

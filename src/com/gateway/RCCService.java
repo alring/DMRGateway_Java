@@ -317,7 +317,7 @@ public class RCCService {
                 break;
              } 
 
-              gateway.client.SendIsBusyToServer(1,fromip, toid, type, gatewayIP);
+              gateway.client.SendIsBusyToServer(1, fromip, toid, type, gatewayIP);
              
               if(!radioStationPC.status.ReleasePTTInProcess)MakeReleasePTT(gatewayIP);
         

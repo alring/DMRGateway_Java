@@ -27,6 +27,7 @@ public class ClientToServer
          long id=0;
          Gateway gateway;
          boolean IsConnected=false;
+         boolean BusyStatus = false;
          
          public String serverIP="";
          public int serverPort=0;
@@ -306,6 +307,7 @@ WriteToSocket(s);
          
              public void SendIsBusyToServer(int answer,String fromip,int toid,int type, String gatewayIP)
     {
+        
         if(!IsConnected)return;
         try {
             id++;
@@ -313,7 +315,6 @@ WriteToSocket(s);
             command.command="IsBusy";
             command.id=id;
         //    command.arguments= new String[]{String.valueOf(answer),fromip,String.valueOf(toid),String.valueOf(type),gatewayIP};
-            
             command.arguments.put("state", String.valueOf(answer));
             command.arguments.put("sourceip", fromip);
             command.arguments.put("destinationid", String.valueOf(toid));
@@ -596,6 +597,13 @@ WriteToSocket(s);
                    
                    
                    RadioStationPC stationPC= gateway.GetRadiostatinPCByIP(String.valueOf(radioip));
+                   
+                   //if (BusyStatus == true)
+                  //    {
+                 //      SendIsBusyToServer(1, fromip, to, type, radioip); // added
+                 //      return;
+                 //     } 
+                   
                    if(stationPC.rtpMediaSession.IsActive) 
                    {
                     if(stationPC.rtpMediaSession.direction==0) stationPC.rtpMediaSession.StopSession();
@@ -611,12 +619,12 @@ WriteToSocket(s);
 
                    stationPC.rtpMediaSession.StartSession(port, fromid);
                    gateway.rccService.MakeCallToRadio(fromip,radioip, to, type);
-                     
+                   BusyStatus = true;  
                }
                   
                    if(command.command.equals("StopOutgoingCall"))
                {  
-                   
+                  BusyStatus = false; 
                   String pcip=(String)command.arguments.get("pcgatewayip");       
                   String radioip=(String)command.arguments.get("radiogatewayip"); 
                    
