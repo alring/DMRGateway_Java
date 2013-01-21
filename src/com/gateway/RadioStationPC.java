@@ -87,86 +87,8 @@ public class RadioStationPC
     {
       return stationPanel;
     }
-    
-//    synchronized private void GetRealAdress() 
-//    {
-//                jpcap.NetworkInterface[] devices = JpcapCaptor.getDeviceList();
-//                if(devices==null)return;
-//                jpcap.NetworkInterface device= null;
-//                for(int i=0;i<devices.length;i++)
-//                {
-//                if(devices[i].description.equals("Hytera Virtual Rndis")){device=devices[i]; break;}
-//                }
-//                if(device==null) return;
-//        jpcap.NetworkInterfaceAddress[] adresses= device.addresses;
-////                    jpcap.NetworkInterfaceAddress[] adresses= devices[i].addresses;
-////                    InetAddress srcipaa=null;
-//                       
-//        InetAddress srcip=null;
-//        for(int j=0;j<adresses.length;j++)
-//                {
-//                if(adresses[j].address instanceof Inet4Address)
-//                {
-//                    srcip=adresses[j].address; break;
-//                }
-//                }
-//
-//        
-//        try
-//        {
-//        
-//               JpcapCaptor captor=null;
-//               captor = JpcapCaptor.openDevice(device,1024,false,2000);
-//               //captor = JpcapCaptor.openDevice(devices[i],1024,false,2000);
-//
-//        JpcapSender sender=captor.getJpcapSenderInstance();
-//        byte[] broadcast=new byte[]{(byte)255,(byte)255,(byte)255,(byte)255,(byte)255,(byte)255};
-//        InetAddress ip=null;
-//
-//                ip = InetAddress.getByName(IPAdress);
-//
-//                ARPPacket arp=new ARPPacket();
-//		arp.hardtype=ARPPacket.HARDTYPE_ETHER;
-//		arp.prototype=ARPPacket.PROTOTYPE_IP;
-//		arp.operation=ARPPacket.ARP_REQUEST;
-//		arp.hlen=6;
-//		arp.plen=4;
-//		arp.sender_hardaddr=device.mac_address;
-//		arp.sender_protoaddr=srcip.getAddress();
-//		arp.target_hardaddr=broadcast;
-//		arp.target_protoaddr=ip.getAddress();
-//		
-//		EthernetPacket ether=new EthernetPacket();
-//		ether.frametype=EthernetPacket.ETHERTYPE_ARP;
-//		ether.src_mac=device.mac_address;
-//		ether.dst_mac=broadcast;
-//		arp.datalink=ether;
-//		
-//		sender.sendPacket(arp);
-//       
-//                captor.setFilter("arp",true);
-//                
-//
-//		ARPPacket pack=(ARPPacket)captor.getPacket();
-//                if(pack!=null)
-//                {
-//                RealIPAdress=String.valueOf(pack.sender_hardaddr[2])+"."+String.valueOf(pack.sender_hardaddr[3])+"."+String.valueOf(pack.sender_hardaddr[4])+"."+String.valueOf(pack.sender_hardaddr[5]);
-//                ID=(pack.sender_hardaddr[3]<<16)|(pack.sender_hardaddr[4]<<8)|(pack.sender_hardaddr[5]);
-//                Subnet=pack.sender_hardaddr[2];
-//                }
-//                
-//                
-//
-//        }
-//        catch(Exception ex)
-//        {
-//        logger.error(ex);
-//        }
-//        
-//                
-//        
-//        
-//    }
+
+        
     public boolean IsOnline()
     {
     

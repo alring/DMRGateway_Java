@@ -27,6 +27,9 @@ public class Gateway
     MainWindow mainWindow;
     List<RadioStationPC>radioStationsPC;
     List<RadioStation> radioStations ;
+    
+            /* Max added */
+    
     RRSService rrsService;
     RCCService rccService;
     MessageService messageService;
@@ -288,6 +291,7 @@ public class Gateway
              //    locationService.StartReport(360013);
               if(!ServerIsOnline)
               {
+                  
                   mainWindow.SetOnline(true);
                   ServerIsOnline=true;
                   client.SendMyTypeToServer(1);
@@ -298,6 +302,7 @@ public class Gateway
                             
                         }
                   client.GetRadioGatewaysFromServer();
+                  
               }
               }
               else
@@ -320,17 +325,38 @@ public class Gateway
                                 
               }
               
+              
+              
               for(int i=0;i<radioStations.size();i++)
               {
+                  
                  long timenow=Calendar.getInstance().getTimeInMillis(); 
-              if(radioStations.get(i).IsOnline)
-                  if(((timenow-radioStations.get(i).registerTime)/1000)>120)
+              if( (radioStations.get(i).IsOnline)  )
+                  if(((timenow-radioStations.get(i).registerTime)/1000)>15)
                   {
-                  radioStations.get(i).IsOnline=false;
-                  client.SendMobileRadioStateToServer(radioStations.get(i).ID, 0, radioStations.get(i).PcRadioIPAdress);
-                  logger.info("Отключение объекта ID="+radioStations.get(i).ID+", превышено время ожидания регистрации.");
+                      if( (radioStations.get(i).timeToLineBeforeOffline==0)) // Если истекло время опроса РC
+                      {    
+                       if(radioStations.get(i).timeToLive == 0) continue;                                         // отключаем ее на сервере, но продолжаем опрашивать,
+                       client.SendMobileRadioStateToServer(radioStations.get(i).ID, 0, radioStations.get(i).PcRadioIPAdress); // пока не истечет время timeTol
+                       logger.info("Отключение объекта ID="+radioStations.get(i).ID+", превышено время ожидания регистрации.");
+                       radioStations.get(i).timeToLineBeforeOffline = -1; 
+                      }
+                      else
+                      {  
+                       radioStations.get(i).registerTime = Calendar.getInstance().getTimeInMillis(); 
+                       radioStations.get(i).needRefresh = true;
+                       radioStations.get(i).timeToLive--; 
+                       radioStations.get(i).timeToLineBeforeOffline--; 
+                      }
+                      if (radioStations.get(i).timeToLive == 0)       
+                      {
+                       radioStations.get(i).IsOnline=false;
+                       radioStations.get(i).needRefresh = false;
+                      }
                   }
               }
+              
+              
               
 //              if((Calendar.getInstance().getTimeInMillis()-soundCheckTimer)/1000>9)    //обновляем список аудиоустройств
 //              {

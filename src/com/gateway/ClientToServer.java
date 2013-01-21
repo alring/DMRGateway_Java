@@ -31,7 +31,8 @@ public class ClientToServer
          
          public String serverIP="";
          public int serverPort=0;
-         
+         static int j[] ;
+        
          
          SocketReader socketReader;
          Thread socketReaderThread;
@@ -134,7 +135,18 @@ WriteToSocket(s);
         }
            
     }
-        
+               /* Max Added */ /*Запрашиваем список контактов с сервера (список носимых)*/
+                public void SendContactListRequestToServer()
+                {
+                    Command command = new Command();
+                    command.command = "GetRadioContactList";
+                  
+                    Gson gson = new Gson();
+                    String s = gson.toJson(command);
+                    WriteToSocket(s);
+                }
+                 
+                 
         
                  public void SendMobileRadioLiveStateToServer(int radioid,int state)   //0 - dead, 1- live
     {
@@ -468,6 +480,7 @@ WriteToSocket(s);
         if(IsConnected)
         try {
             s=Aes128.getInstance().encrypt(s);
+           
             writer.write(s);
             writer.newLine();
             writer.flush();
@@ -484,20 +497,29 @@ WriteToSocket(s);
       
     public class SocketReader implements Runnable
     {
-
+        
         class CommandProcessor implements Runnable
         {
           Command command;
 
+         
+          
             public CommandProcessor(Command command) {
                 this.command = command;
             }
 
             @Override
-            public void run() {
+            public void run() 
+            {
                 //logger.info("Command "+command.command.toString()+ " thread start");
+                
+                logger.warn(command.command);
+                
                 try
                 {
+                    
+                        
+                    
                     
                      if(command.command.equals("ConnectionLimit"))  
                {
@@ -506,11 +528,12 @@ WriteToSocket(s);
                }
                     
                     
-                                      if(command.command.equals("MobileRadioMonitor"))
+                if(command.command.equals("MobileRadioMonitor"))
                { 
                   // int state =Integer.parseInt(comand.arguments[1]);
                    int id=Integer.parseInt((String)command.arguments.get("mobileid")); 
-                   RadioStation station=  gateway.GetRadiostatinByID(id);
+                   RadioStation station = gateway.GetRadiostatinByID(id);
+ 
                    if(station!=null)gateway.rccService.MakeRemoteMonitorToRadio(station.PcRadioIPAdress, id);
                }
                
@@ -598,11 +621,11 @@ WriteToSocket(s);
                    
                    RadioStationPC stationPC= gateway.GetRadiostatinPCByIP(String.valueOf(radioip));
                    
-                   //if (BusyStatus == true)
-                  //    {
-                 //      SendIsBusyToServer(1, fromip, to, type, radioip); // added
-                 //      return;
-                 //     } 
+                   if (BusyStatus == true)
+                      {
+                       SendIsBusyToServer(1, fromip, to, type, radioip); // added
+                       return;
+                      } 
                    
                    if(stationPC.rtpMediaSession.IsActive) 
                    {
@@ -611,25 +634,30 @@ WriteToSocket(s);
                      {
                             if(stationPC.rtpMediaSession.operatorid==fromid)stationPC.rtpMediaSession.StopSession();
                             else {
-                                SendIsBusyToServer(1, fromip, to, type, radioip);
+                               // SendIsBusyToServer(1, fromip, to, type, radioip);
                                 return;}
                      }
                      
                    }
 
                    stationPC.rtpMediaSession.StartSession(port, fromid);
+                   
+                   logger.warn("Вызов функции makecall");
                    gateway.rccService.MakeCallToRadio(fromip,radioip, to, type);
                    BusyStatus = true;  
                }
                   
                    if(command.command.equals("StopOutgoingCall"))
                {  
+                   
+                  logger.warn("Вызов функции release ptt");
                   BusyStatus = false; 
                   String pcip=(String)command.arguments.get("pcgatewayip");       
                   String radioip=(String)command.arguments.get("radiogatewayip"); 
                    
                    gateway.GetRadiostatinPCByIP(String.valueOf(radioip)).rtpMediaSession.StopSession();
                    gateway.rccService.MakeReleasePTT(radioip);
+                   
                }
                   
                       if(command.command.equals("IncomingCallReply"))
@@ -699,11 +727,13 @@ WriteToSocket(s);
             try {
                
                String s= ReadData();
+               logger.warn("Read from sock: " + s);
                if(s==null)break;
                Gson gson= new Gson();
                Command command = gson.fromJson(s, Command.class);
                
                new Thread(new CommandProcessor(command)).start();
+              
                
 //                      if(command.command.equals("MobileRadioMonitor"))
 //               { 

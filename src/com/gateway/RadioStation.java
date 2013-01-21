@@ -5,22 +5,51 @@
 package com.gateway;
 
 import java.util.Calendar;
-
+import java.net.DatagramPacket;
 /**
  *
  * @author Alexandr
  */
 public class RadioStation 
 {
-    int ID;
+    int ID;             //
     String Name;
     String  IPAdress;
     String  PcRadioIPAdress;
+    byte[] arrayIP = new byte[4];
     int Subnet;
+    public boolean needRefresh = false;
+    public long timeToLive = 10;       // цикл опроса
+    public long timeToLineBeforeOffline = 5; // цикло опроса до перевода в выключенное состояние
     boolean IsOnline= false;
     public long registerTime;
     boolean gpsIsOn=false;
-
+    
+    DatagramPacket requestPacket; 
+            
+    public DatagramPacket getRequestPacket()
+    {
+       return requestPacket;         
+    }
+    
+    public void setRequestPacket(DatagramPacket newPacket)
+    {
+        requestPacket = newPacket;
+    }
+    
+    public byte[] getArrayIP()
+    {
+        return arrayIP;
+    }
+    
+    public void setArrayIP(byte[] newIP)
+    {
+        arrayIP[0] = newIP[3]; 
+        arrayIP[1] = newIP[2]; 
+        arrayIP[2] = newIP[1]; 
+        arrayIP[3] = newIP[0]; 
+    }
+    
     public RadioStation(String IPAdress) 
     {
         this.IPAdress = IPAdress.replace("/", "");
