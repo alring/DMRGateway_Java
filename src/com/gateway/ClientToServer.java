@@ -105,8 +105,12 @@ public class ClientToServer
             }
             
             }
-            
+           
     }
+        
+            
+        
+        
                  public void SendGpsToServer(int fromid, double lat,double lon,double speed, int dir,long time,int errorType) 
     {
              if(!IsConnected)return;
@@ -135,16 +139,7 @@ WriteToSocket(s);
         }
            
     }
-               /* Max Added */ /*Запрашиваем список контактов с сервера (список носимых)*/
-                public void SendContactListRequestToServer()
-                {
-                    Command command = new Command();
-                    command.command = "GetRadioContactList";
-                  
-                    Gson gson = new Gson();
-                    String s = gson.toJson(command);
-                    WriteToSocket(s);
-                }
+           
                  
                  
         
@@ -317,9 +312,67 @@ WriteToSocket(s);
         
     }
          
-             public void SendIsBusyToServer(int answer,String fromip,int toid,int type, String gatewayIP)
+             
+              public void SendLockToServer(int answer,String fromip,int toid,int type, String gatewayIP)
+              {
+                  
+                          if(!IsConnected)return;
+                try {
+            id++;
+            Command command= new Command();
+            command.command="LockPtt";
+            command.id=id;
+        //    command.arguments= new String[]{String.valueOf(answer),fromip,String.valueOf(toid),String.valueOf(type),gatewayIP};
+            command.arguments.put("state", String.valueOf(answer));
+            command.arguments.put("sourceip", fromip);
+            command.arguments.put("destinationid", String.valueOf(toid));
+            command.arguments.put("type", String.valueOf(type));
+            command.arguments.put("radiogatewayip", gatewayIP);
+            
+            Gson gson= new Gson();
+            String s= gson.toJson(command);
+WriteToSocket(s);
+        } catch (Exception ex) {
+            logger.error(ex.getMessage(),ex.fillInStackTrace());
+            IsConnected=false;
+        }
+              }              
+              
+              
+              
+              
+              public void SendUnlockToServer(String fromip, String gatewayIP)
+              {
+               
+                 if(!IsConnected)return;
+                try {
+            id++;
+            Command command= new Command();
+            command.command="UlockPtt";
+            command.id=id;
+        //    command.arguments= new String[]{String.valueOf(answer),fromip,String.valueOf(toid),String.valueOf(type),gatewayIP};
+ 
+          
+            
+            Gson gson= new Gson();
+            String s= gson.toJson(command);
+WriteToSocket(s);
+        } catch (Exception ex) {
+            logger.error(ex.getMessage(),ex.fillInStackTrace());
+            IsConnected=false;
+        } 
+                  
+                  
+                  
+              }
+              
+              
+              
+              
+              public void SendIsBusyToServer(int answer,String fromip,int toid,int type, String gatewayIP)
     {
-        
+        logger.warn("отправка занятости на сервер");
+                
         if(!IsConnected)return;
         try {
             id++;
@@ -513,7 +566,7 @@ WriteToSocket(s);
             {
                 //logger.info("Command "+command.command.toString()+ " thread start");
                 
-                logger.warn(command.command);
+            
                 
                 try
                 {
@@ -603,13 +656,7 @@ WriteToSocket(s);
                  
                   if(command.command.equals("OutgoingCall"))
                {      
-                   int port=GetFreeUDPPort(10000, 20000);
-                   OutgoingCallReply(command,port);
-//                   String fromip= comand.arguments[0];
-//                   int to= Integer.parseInt(comand.arguments[2]);
-//                   int type= Integer.parseInt(comand.arguments[3]);
-//                   String radioip=comand.arguments[4];
-//                   String pcip=comand.arguments[5];
+                   
                    
                   String fromip = (String)command.arguments.get("sourceip"); 
                   int fromid = Integer.parseInt((String)command.arguments.get("operatorid"));
@@ -618,14 +665,18 @@ WriteToSocket(s);
                   String pcip=(String)command.arguments.get("pcgatewayip");       
                   String radioip=(String)command.arguments.get("radiogatewayip"); 
                    
-                   
+                  
+                  
+                   int port=GetFreeUDPPort(10000, 20000);
+                   OutgoingCallReply(command,port);
+//                   String fromip= comand.arguments[0];
+//                   int to= Integer.parseInt(comand.arguments[2]);
+//                   int type= Integer.parseInt(comand.arguments[3]);
+//                   String radioip=comand.arguments[4];
+//                   String pcip=comand.arguments[5];
+                           
                    RadioStationPC stationPC= gateway.GetRadiostatinPCByIP(String.valueOf(radioip));
                    
-                   if (BusyStatus == true)
-                      {
-                       SendIsBusyToServer(1, fromip, to, type, radioip); // added
-                       return;
-                      } 
                    
                    if(stationPC.rtpMediaSession.IsActive) 
                    {
@@ -634,33 +685,34 @@ WriteToSocket(s);
                      {
                             if(stationPC.rtpMediaSession.operatorid==fromid)stationPC.rtpMediaSession.StopSession();
                             else {
-                               // SendIsBusyToServer(1, fromip, to, type, radioip);
+                                SendIsBusyToServer(1, fromip, to, type, radioip);
                                 return;}
                      }
                      
                    }
 
-                   stationPC.rtpMediaSession.StartSession(port, fromid);
+                   stationPC.rtpMediaSession.StartSession(port, fromid);         
                    
-                   logger.warn("Вызов функции makecall");
-                   gateway.rccService.MakeCallToRadio(fromip,radioip, to, type);
-                   BusyStatus = true;  
-               }
-                  
-                   if(command.command.equals("StopOutgoingCall"))
+                   logger.warn("Вызов функции makecall");   
+                   if (!gateway.rccService.MakeCallToRadio(fromip,radioip, to, type))
+                       gateway.client.SendIsBusyToServer(1, fromip, to, type, radioip);
+                   
+                     
+                   
+                 
+               }   
+                   if( command.command.equals("StopOutgoingCall"))
                {  
-                   
-                  logger.warn("Вызов функции release ptt");
-                  BusyStatus = false; 
-                  String pcip=(String)command.arguments.get("pcgatewayip");       
-                  String radioip=(String)command.arguments.get("radiogatewayip"); 
-                   
-                   gateway.GetRadiostatinPCByIP(String.valueOf(radioip)).rtpMediaSession.StopSession();
-                   gateway.rccService.MakeReleasePTT(radioip);
-                   
+                    
+                    logger.warn("Вызов функции release ptt");
+                    String pcip=(String)command.arguments.get("pcgatewayip");       
+                    String radioip=(String)command.arguments.get("radiogatewayip"); 
+                     gateway.GetRadiostatinPCByIP(String.valueOf(radioip)).rtpMediaSession.StopSession();
+                     gateway.rccService.MakeReleasePTT(radioip);
+                  
                }
                   
-                      if(command.command.equals("IncomingCallReply"))
+                   if(command.command.equals("IncomingCallReply"))
                {      
                 //gateway.rccService.MakeCallToRadio(Integer.parseInt(comand.arguments[0]),Integer.parseInt(comand.arguments[1]));
                    int port= Integer.parseInt((String)command.arguments.get("port"));
@@ -727,7 +779,7 @@ WriteToSocket(s);
             try {
                
                String s= ReadData();
-               logger.warn("Read from sock: " + s);
+             
                if(s==null)break;
                Gson gson= new Gson();
                Command command = gson.fromJson(s, Command.class);

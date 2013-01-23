@@ -49,6 +49,12 @@ public class RRSService
           }
     } 
     
+    protected void finalize()
+    {
+        System.out.println("Вход в деструктор");
+    }
+    
+    
     public void Start()
     { 
             dataReceiver= new DataReceiver();
@@ -212,7 +218,7 @@ public class RRSService
                                  DatagramPacket reqPack= new DatagramPacket(request, request.length,receivePacket.getSocketAddress()); /*max added*/
                                  gateway.radioStations.get(i).setRequestPacket(reqPack);
                                  gateway.radioStations.get(i).registerTime=Calendar.getInstance().getTimeInMillis(); 
-                                 gateway.radioStations.get(i).timeToLive = 10; 
+                                 gateway.radioStations.get(i).timeToLive = 40; 
                                  gateway.radioStations.get(i).timeToLineBeforeOffline = 3;
                                  break;   
                              }

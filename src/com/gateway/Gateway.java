@@ -35,7 +35,8 @@ public class Gateway
     MessageService messageService;
     LocationService locationService;
     DTService dataService;
-    
+    List<BusyGate> busyGate;
+   
     SoundManager soundManager;
     
     ClientToServer client;
@@ -295,7 +296,8 @@ public class Gateway
                   mainWindow.SetOnline(true);
                   ServerIsOnline=true;
                   client.SendMyTypeToServer(1);
-                        try {
+                        try 
+                        {
                             Thread.sleep(1000);
                         } catch (InterruptedException ex) 
                         {
@@ -332,12 +334,12 @@ public class Gateway
                   
                  long timenow=Calendar.getInstance().getTimeInMillis(); 
               if( (radioStations.get(i).IsOnline)  )
-                  if(((timenow-radioStations.get(i).registerTime)/1000)>15)
+                  if(((timenow-radioStations.get(i).registerTime)/1000)>300)
                   {
                       if( (radioStations.get(i).timeToLineBeforeOffline==0)) // Если истекло время опроса РC
                       {    
                        if(radioStations.get(i).timeToLive == 0) continue;                                         // отключаем ее на сервере, но продолжаем опрашивать,
-                       client.SendMobileRadioStateToServer(radioStations.get(i).ID, 0, radioStations.get(i).PcRadioIPAdress); // пока не истечет время timeTol
+                       client.SendMobileRadioStateToServer(radioStations.get(i).ID, 0, radioStations.get(i).PcRadioIPAdress); // пока не истечет время timeTolive
                        logger.info("Отключение объекта ID="+radioStations.get(i).ID+", превышено время ожидания регистрации.");
                        radioStations.get(i).timeToLineBeforeOffline = -1; 
                       }

@@ -23,14 +23,16 @@ public class RCCService {
     DatagramSocket socket;
     DatagramPacket receivePacket;
     DataReceiver dataReceiver;
+    FilterThread filter = new FilterThread("");
+    
     byte[] receiveData = new byte[64];
     byte[] sendData = new byte[1024];
     Gateway gateway;
+    List<RadioGatewayState> gateway_state;
     static Logger logger = Logger.getLogger(RCCService.class);
     boolean needReleasePTT=false;
     boolean isGatewayBusy = false;   // переменная, для определения занятости шлюза
-    
-    
+    boolean needAddRadioGatewayToList = false;
     
 //    boolean isbusy =false;
 //    List<Command> commands;
@@ -58,9 +60,12 @@ public class RCCService {
     
     public RCCService(int Port, Gateway gateway) 
     {
+        gateway_state = new ArrayList<RadioGatewayState>();
+        gateway_state.add(new RadioGatewayState()); 
         this.gateway=gateway;
         this.Port = Port; 
         receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        
     }
     
 
@@ -258,9 +263,57 @@ public class RCCService {
         }  
                 
                 
-         public void MakeCallToRadio(String fromip,String gatewayIP,int toid,int type)    //00
+         public boolean MakeCallToRadio(String fromip,String gatewayIP,int toid,int type)    //00
         {     
-             isGatewayBusy = true;
+                  
+             for(int i = 0; i < gateway_state.size();i++)
+             {
+                 if(gateway_state.get(i).getIPaddr().equals(gatewayIP)) // находим в списке станцию, которую должны
+                 {                                                      // вывести на передачу
+                     if (gateway_state.get(i).getState() == true )      // если она еще не окончила предыдуший вызов - выходим
+                     {
+                          logger.warn("не освободилась еще")  ;
+                        return false;
+                     }
+                     else if(gateway_state.get(i).unready == true)
+                     {
+                         return false;
+                     }    
+                     else
+                     {
+                         gateway_state.get(i).setState(true);
+                     }
+                 }
+             }
+               
+             
+             for(int i = 0; i < gateway_state.size();i++)               // добавляем станци в список 
+             {
+                 
+                 if( (gateway_state.get(i).getIPaddr().equals(gatewayIP))  )  
+                 {
+                     logger.warn("Уже есть такая станция");
+                     needAddRadioGatewayToList = false;
+                     break;
+                 } // если такая уже ест, то на выход
+                 
+                 else
+                 {
+                     needAddRadioGatewayToList = true;
+                    logger.warn("добавили");                   
+                   
+                 }
+             }             
+             
+             
+                   if (needAddRadioGatewayToList == true)
+                   {    
+                    RadioGatewayState rg = new RadioGatewayState(gatewayIP,true); // пихаем в список станцию, которая делает вызов
+                    gateway_state.add(rg); 
+                    needAddRadioGatewayToList = false;
+                   }
+             
+             
 //           if(type==0)
 //           {
 //           RadioStation station =gateway.GetRadiostatinByID(toid);
@@ -293,10 +346,10 @@ public class RCCService {
            try
            {
            DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCByIP(gatewayIP).RealIPAdress),Port);
-           needReleasePTT = false;
+     
            logger.warn("Отправка пакета с генерацией вызова");
            socket.send(sendPacket);
-           needReleasePTT = true;
+      
            }
            catch(Exception ex)
            {
@@ -316,7 +369,7 @@ public class RCCService {
                 radioStationPC.status.callreplyOK=false;
                 radioStationPC.status.ReleasePTTInProcess=false;
                 gateway.client.SendIsBusyToServer(0,fromip, toid, type, gatewayIP);
-                return;} 
+                return true;} 
             if(radioStationPC.status.ReleasePTTInProcess)
                break;
             }
@@ -327,7 +380,7 @@ public class RCCService {
               gateway.client.SendIsBusyToServer(1, fromip, toid, type, gatewayIP);
              
               //if(!radioStationPC.status.ReleasePTTInProcess){MakeReleasePTT(gatewayIP); logger.warn("Point 2");}
-        
+           return true;
         }
          
          public class MakePTT implements Runnable
@@ -384,11 +437,27 @@ public class RCCService {
          public void MakeReleasePTT(String adr)
         {
             
-           
-           while(needReleasePTT == true) // пока не получим 
-                   ;
+           for(int i = 0; i < gateway_state.size();i++)
+             {
+                 if(gateway_state.get(i).getIPaddr().equals(adr)) //   находим в списке станцию, которую должны
+                 {                                                      // снять с передачи
+                     if (gateway_state.get(i).getState() == true )      // если она еще не окончила предыдуший вызов - выходим
+                     {
+                        gateway_state.get(i).setState(false);           // устанавливаем ее как свободную
+                        
+                        
+                     }
+                     else
+                     {
+                         
+                         return;                                                  // если она уже свободна тогда выходим 
+                     }
+                 }
+             }
+       
             
-
+            
+                    
              
             RadioStationPC statioPC= gateway.GetRadiostatinPCByIP(adr);
             if(statioPC.status.ReleasePTTInProcess)return;
@@ -412,6 +481,7 @@ public class RCCService {
            DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCByIP(adr).RealIPAdress),Port);
            logger.warn("Отправка пакета отпускания PTT");
            socket.send(sendPacket);
+           filter = new FilterThread(adr); // запускаем поток блокировщика
            }
            catch(Exception ex)
            {
@@ -642,7 +712,6 @@ public class RCCService {
                         {
                             radioStationPC.stationPanel.SetState("Исходящий вызов");
                             logger.warn("Получено сообщение от РС от начале вызова");
-                            needReleasePTT = false;
                             radioStationPC.IsBusy =true;
                             if(!statioPC.status.pttreplyOK)  //если вызов с тангеты
                             {
@@ -650,6 +719,7 @@ public class RCCService {
                              int type=packet.GetCallTypeExtPTT();
                      
                              gateway.client.SendCallToServer(radioStationPC.ID, target, type, radioStationPC.IPAdress,2);
+                             
                             }
                            
                         }
@@ -742,6 +812,66 @@ public class RCCService {
         
         }
         
+        public boolean getMutexStatus()
+        {
+            return filter.ReadMutexStatus();
+        }
+          
         
+        public class FilterThread implements Runnable
+        {
+        Thread filter;  
+        boolean mutex;
+        long delayTime = 500;
+        String IP;                // IP, для которого включаем фильтр
+        
+            public FilterThread(String arg)
+            {
+                filter = new Thread(this);
+                mutex = false;
+                IP = arg;
+                filter.start();
+            }
+            
+            synchronized public boolean ReadMutexStatus()
+            {
+               return mutex;
+            }
+            
+            @Override 
+            public void run()
+            {
+              
+                for(int i = 0; i < gateway_state.size(); i++)
+                {
+                    if(gateway_state.get(i).IPaddr.equals(IP))
+                    {
+                        gateway_state.get(i).unready = true;
+                          logger.warn("Блокировщик запущен для станции " + gateway_state.get(i).IPaddr);
+                    }
+                    
+                }
+                
+                
+            try {
+                Thread.sleep(delayTime);
+            } catch (InterruptedException ex) {
+                java.util.logging.Logger.getLogger(RCCService.class.getName()).log(Level.SEVERE, null, ex);
+            }
+                
+                for(int i = 0; i < gateway_state.size(); i++)
+                {
+                    if(gateway_state.get(i).IPaddr.equals(IP))
+                    {
+                        gateway_state.get(i).unready = false;
+                        logger.warn("Блокировщик выключен для станци " + gateway_state.get(i).IPaddr);
+                    }
+
+                }        
+            
+            
+          }    
+            
+        }
         
 }
