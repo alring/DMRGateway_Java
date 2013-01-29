@@ -6,10 +6,7 @@ package com.gateway;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.logging.Level;
 import org.apache.log4j.Logger;
 import sun.awt.windows.ThemeReader;
@@ -23,8 +20,7 @@ public class RCCService {
     DatagramSocket socket;
     DatagramPacket receivePacket;
     DataReceiver dataReceiver;
-    FilterThread filter = new FilterThread("");
-    
+    long startTime = 0;
     byte[] receiveData = new byte[64];
     byte[] sendData = new byte[1024];
     Gateway gateway;
@@ -33,6 +29,8 @@ public class RCCService {
     boolean needReleasePTT=false;
     boolean isGatewayBusy = false;   // переменная, для определения занятости шлюза
     boolean needAddRadioGatewayToList = false;
+      public boolean txModeOnly = false;
+
     
 //    boolean isbusy =false;
 //    List<Command> commands;
@@ -53,8 +51,7 @@ public class RCCService {
 //    boolean ReleasePTTInProcess=false;
     
 
-    
-    
+   
     
 
     
@@ -141,7 +138,7 @@ public class RCCService {
 //
 //             }      
                      
-    
+   
            
            
 //                             public void MakeRadioCheckToRadio(String gatewayIP,int toid)  
@@ -171,6 +168,8 @@ public class RCCService {
 //             }      
 //                     
 //        }  
+           
+           
            
            
                   public void MakeRemoteMonitorToRadio(String gatewayIP,int toid)    //прослушка
@@ -265,78 +264,20 @@ public class RCCService {
                 
          public boolean MakeCallToRadio(String fromip,String gatewayIP,int toid,int type)    //00
         {     
-                  
-             for(int i = 0; i < gateway_state.size();i++)
-             {
-                 if(gateway_state.get(i).getIPaddr().equals(gatewayIP)) // находим в списке станцию, которую должны
-                 {                                                      // вывести на передачу
-                     if (gateway_state.get(i).getState() == true )      // если она еще не окончила предыдуший вызов - выходим
-                     {
-                          logger.warn("не освободилась еще")  ;
-                        return false;
-                     }
-                     else if(gateway_state.get(i).unready == true)
-                     {
-                         return false;
-                     }    
-                     else
-                     {
-                         gateway_state.get(i).setState(true);
-                     }
-                 }
-             }
-               
-             
-             for(int i = 0; i < gateway_state.size();i++)               // добавляем станци в список 
-             {
-                 
-                 if( (gateway_state.get(i).getIPaddr().equals(gatewayIP))  )  
-                 {
-                     logger.warn("Уже есть такая станция");
-                     needAddRadioGatewayToList = false;
-                     break;
-                 } // если такая уже ест, то на выход
-                 
-                 else
-                 {
-                     needAddRadioGatewayToList = true;
-                    logger.warn("добавили");                   
-                   
-                 }
-             }             
-             
-             
-                   if (needAddRadioGatewayToList == true)
-                   {    
-                    RadioGatewayState rg = new RadioGatewayState(gatewayIP,true); // пихаем в список станцию, которая делает вызов
-                    gateway_state.add(rg); 
-                    needAddRadioGatewayToList = false;
-                   }
-             
-             
-//           if(type==0)
-//           {
-//           RadioStation station =gateway.GetRadiostatinByID(toid);
-//           if(station==null)return ;
-//           RadioStationPC stationPC=gateway.GetRadiostatinPCBySubnet(station.Subnet);
-//           if(stationPC==null)return ;
-//           }
+           
              RadioStationPC radioStationPC = gateway.GetRadiostatinPCByIP(gatewayIP);
-
-//            if(radioStationPC.IsBusy)
-//            {
-//               gateway.client.SendStopCallToServer(-1, toid, type, gatewayIP);
-//              gateway.client.SendIsBusyToServer(0,fromip, toid, type, gatewayIP);
-//               return;
-             
-//           }
+             if(radioStationPC.IsBusy == true) 
+             {
+                 logger.warn("Давай нахуй отсюда");
+                 return false;
+             }
+            
+            radioStationPC.IsBusy = true;
+            logger.warn("Статус занят");
+            
+         
              radioStationPC.status.callreplyOK=false; 
-             
-//             if(radioStationPC.status.ReleasePTTInProcess)
-//             {
-//             gateway.client.SendIsBusyToServer(1,fromip, toid, type, gatewayIP);
-//             return;
-//             }
+
                  radioStationPC.status.ReleasePTTInProcess=false;
            //   for(int i=0;i<2;i++)                           
            //  {
@@ -356,12 +297,12 @@ public class RCCService {
             logger.error(ex);
            }
            try 
-            {
+             {
             Thread.sleep(50);
              } catch (InterruptedException ex) 
-             {
+            {
                 logger.error(ex);
-             }
+            }
             for(int j=0;j<15;j++)  
             {
                        
@@ -369,17 +310,17 @@ public class RCCService {
                 radioStationPC.status.callreplyOK=false;
                 radioStationPC.status.ReleasePTTInProcess=false;
                 gateway.client.SendIsBusyToServer(0,fromip, toid, type, gatewayIP);
+                logger.warn("выход по занятому");
                 return true;} 
             if(radioStationPC.status.ReleasePTTInProcess)
                break;
             }
             if(radioStationPC.status.ReleasePTTInProcess)
-            //   break;
-            // } 
-
+            {
               gateway.client.SendIsBusyToServer(1, fromip, toid, type, gatewayIP);
-             
-              //if(!radioStationPC.status.ReleasePTTInProcess){MakeReleasePTT(gatewayIP); logger.warn("Point 2");}
+              logger.warn("Release ptt in progress");
+            }
+           logger.warn("Point 2");
            return true;
         }
          
@@ -397,7 +338,7 @@ public class RCCService {
         {
             
              RadioStationPC statioPC= gateway.GetRadiostatinPCByRealIP(adr);
-             isGatewayBusy = false;   // сбрасываем флаг занятости по обработке команды
+     
              statioPC.status.pttreplyOK=false;
          //    for(int i=0;i<1;i++)                           
          //    {
@@ -406,16 +347,17 @@ public class RCCService {
            byte[] pack =packet.GeneratePressPTT();
            try
            {
-           DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(adr),Port);
-           logger.warn("Отправка пакета нажатия PPT")
- ;          socket.send(sendPacket);
+            DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(adr),Port);
+            
+            logger.warn("Отправка пакета нажатия PPT");
+            socket.send(sendPacket);
            }
            catch(Exception ex)
            {
             logger.error(ex);
            }
            
-                       try 
+                 try 
             {
             Thread.sleep(100);
              } catch (InterruptedException ex) 
@@ -437,30 +379,22 @@ public class RCCService {
          public void MakeReleasePTT(String adr)
         {
             
-           for(int i = 0; i < gateway_state.size();i++)
-             {
-                 if(gateway_state.get(i).getIPaddr().equals(adr)) //   находим в списке станцию, которую должны
-                 {                                                      // снять с передачи
-                     if (gateway_state.get(i).getState() == true )      // если она еще не окончила предыдуший вызов - выходим
-                     {
-                        gateway_state.get(i).setState(false);           // устанавливаем ее как свободную
-                        
-                        
-                     }
-                     else
-                     {
-                         
-                         return;                                                  // если она уже свободна тогда выходим 
-                     }
-                 }
-             }
-       
-            
-            
-                    
              
             RadioStationPC statioPC= gateway.GetRadiostatinPCByIP(adr);
             if(statioPC.status.ReleasePTTInProcess)return;
+            
+            
+            while(statioPC.status.pttreplyOK != true)  // пока не получим ответ
+            {
+              try 
+                {
+                   Thread.sleep(30);
+                } 
+              catch (InterruptedException ex) 
+                {
+                   java.util.logging.Logger.getLogger(RCCService.class.getName()).log(Level.SEVERE, null, ex);
+                }   
+            }
             
 //                                new Thread(new Runnable() {
 //	        @Override
@@ -471,6 +405,7 @@ public class RCCService {
             
             statioPC.status.ReleasePTTInProcess=true; 
             statioPC.status.releasepttreplyOK=false;
+           
             //for(int i=0;i<2;i++)                           
              //{ 
            
@@ -480,8 +415,11 @@ public class RCCService {
            {
            DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCByIP(adr).RealIPAdress),Port);
            logger.warn("Отправка пакета отпускания PTT");
+           
+           Thread.sleep(50);
+           
            socket.send(sendPacket);
-           filter = new FilterThread(adr); // запускаем поток блокировщика
+          
            }
            catch(Exception ex)
            {
@@ -489,16 +427,20 @@ public class RCCService {
            }
            for(int j=0;j<15;j++)  // шозанах?
             {
-            if(statioPC.status.releasepttreplyOK){
+            if(statioPC.status.releasepttreplyOK)
+            {
                 statioPC.status.releasepttreplyOK=false;
                 statioPC.status.ReleasePTTInProcess=false;
-                return;}
+                logger.warn("ебанутый выход");
+                return;
+             }
             }
              //}
-            statioPC.status.ReleasePTTInProcess=false;                       
-             
+            statioPC.status.ReleasePTTInProcess=false;  
             
-            
+            new ClearFlag(500,gateway,adr); 
+          
+            txModeOnly = false;
 //                       	        }
 //	    }).start();  
             
@@ -513,10 +455,11 @@ public class RCCService {
         public void run() {
            while(!Thread.interrupted())
             {   
-                try {
+                try 
+                {
                 receivePacket = new DatagramPacket(new byte[128], 128);
                 socket.receive(receivePacket);   
-    
+             
                 RCCPacket packet = new RCCPacket(receivePacket.getData());
                 if(packet.ChecksumOk())
                 {
@@ -540,7 +483,7 @@ public class RCCService {
             logger.error(ex);
            }
                     
-           Thread.sleep(50);
+        //   Thread.sleep(50);
            
            }
 
@@ -587,7 +530,7 @@ public class RCCService {
                     {
                             int i=0;
                     }
-                                                if(packet.GetOperation()==RCCPacket.Operation.RADIO_CHECK_REQUEST_ACK)
+                      if(packet.GetOperation()==RCCPacket.Operation.RADIO_CHECK_REQUEST_ACK)
                     {
                                 statioPC.status.radiocheckOK=true;
                                 int i=0;
@@ -642,9 +585,10 @@ public class RCCService {
                     {
                         if(packet.GetMakeCallReply()==RCCPacket.CallReplyStatus.SUCCES)
                         {
+                        logger.warn("Подтверждение генерации вызова");    
                         statioPC.status.callreplyOK=true;
                        // MakePTT(receivePacket.getAddress().toString().replace("/", ""));
-                        new Thread(new MakePTT(receivePacket.getAddress().toString().replace("/", ""))).start();
+                              new Thread(new MakePTT(receivePacket.getAddress().toString().replace("/", ""))).start();
                         
                         
                         }
@@ -658,8 +602,9 @@ public class RCCService {
                     }
                 
                      
-                     
-                    if(packet.GetOperation()==RCCPacket.Operation.RECEIVE_STATUS)
+                   if (txModeOnly == false)   
+                   {
+                    if( packet.GetOperation()==RCCPacket.Operation.RECEIVE_STATUS)
                     {
                         int type=packet.GetCallType();
                         int TargetID=packet.GetCallTarget();
@@ -674,7 +619,7 @@ public class RCCService {
                         {
                             gateway.client.SendCallToServer(SenderID, TargetID, type, radioStationPC.IPAdress,0);
                             radioStationPC.stationPanel.SetState("Входяший вызов");
-                            radioStationPC.IsBusy=true;
+                            radioStationPC.IsBusy=false;
                             
                         }
                         
@@ -689,6 +634,7 @@ public class RCCService {
                         }
                              if(packet.GetCallStatus()==RCCPacket.CallStatus.HANGTIME)
                         {
+                            radioStationPC.IsBusy =false;
                             radioStationPC.rtpMediaSession.StopSession();
                             type=0;         //звонок в состоянии ожидания
                             radioStationPC.stationPanel.SetState("Входяший вызов (ожидание ответа)");
@@ -697,7 +643,7 @@ public class RCCService {
                         }
                       
                     }
-                    
+                   }
                     
                     
                     
@@ -711,8 +657,9 @@ public class RCCService {
                         if((packet.GetCallStatus()==RCCPacket.CallStatus.START_CALL)  )
                         {
                             radioStationPC.stationPanel.SetState("Исходящий вызов");
-                            logger.warn("Получено сообщение от РС от начале вызова");
-                            radioStationPC.IsBusy =true;
+                            //radioStationPC.setAcceptPtt(true);   // получено подтверждение о начале вызова
+                            
+                           // radioStationPC.IsBusy =true;
                             if(!statioPC.status.pttreplyOK)  //если вызов с тангеты
                             {
                              int target=packet.GetCallTargetExtPTT();  
@@ -737,11 +684,11 @@ public class RCCService {
                             statioPC.status.releasepttreplyOK=true;
                             radioStationPC.IsBusy =false;
                             radioStationPC.stationPanel.SetState("Исходящий вызов (ожидание ответа)");
-                                if(!statioPC.status.pttreplyOK)  //если вызов с тангеты
+                           
+                            if(!statioPC.status.pttreplyOK)  //если вызов с тангеты
                             {
                              int target=packet.GetCallTargetExtPTT();  
                              int type=packet.GetCallTypeExtPTT();
-                             
                              //gateway.client.SendCallToServer(radioStationPC.ID, target, type, radioStationPC.IPAdress,1);
                              gateway.client.SendStopCallToServer(radioStationPC.ID, target, type, radioStationPC.IPAdress);
                             }
@@ -773,6 +720,7 @@ public class RCCService {
                                 if(reply==RCCPacket.CallReplyStatus.FAILURE)
                             {
                                 statioPC.status.pttreplyOK=false;
+                                logger.warn("PTT OPERATION FAILURE!");
                             }
                         
                         }
@@ -812,66 +760,51 @@ public class RCCService {
         
         }
         
-        public boolean getMutexStatus()
-        {
-            return filter.ReadMutexStatus();
-        }
-          
+
+      
         
-        public class FilterThread implements Runnable
+   
+        public class ClearFlag implements Runnable
         {
-        Thread filter;  
-        boolean mutex;
-        long delayTime = 500;
-        String IP;                // IP, для которого включаем фильтр
-        
-            public FilterThread(String arg)
+            Gateway gateway;
+            Thread t_thread = new Thread(this);
+            int delay = 500;
+            String IP = "";
+            
+            public ClearFlag(Gateway inWorkGateWay,String IPAddr)
             {
-                filter = new Thread(this);
-                mutex = false;
-                IP = arg;
-                filter.start();
+                IP = IPAddr;
+                gateway = inWorkGateWay;
+                t_thread.start();
             }
             
-            synchronized public boolean ReadMutexStatus()
+            public ClearFlag(int new_delay, Gateway inWorkGateway, String IPAddr)
             {
-               return mutex;
+                IP = IPAddr;
+                gateway = inWorkGateway;
+                delay = new_delay;
+                t_thread.start();
             }
             
-            @Override 
+            @Override
             public void run()
             {
-              
-                for(int i = 0; i < gateway_state.size(); i++)
-                {
-                    if(gateway_state.get(i).IPaddr.equals(IP))
-                    {
-                        gateway_state.get(i).unready = true;
-                          logger.warn("Блокировщик запущен для станции " + gateway_state.get(i).IPaddr);
-                    }
-                    
-                }
-                
+                RadioStationPC radiopc = gateway.GetRadiostatinPCByIP(IP);
                 
             try {
-                Thread.sleep(delayTime);
+                Thread.sleep(delay);
             } catch (InterruptedException ex) {
                 java.util.logging.Logger.getLogger(RCCService.class.getName()).log(Level.SEVERE, null, ex);
             }
-                
-                for(int i = 0; i < gateway_state.size(); i++)
-                {
-                    if(gateway_state.get(i).IPaddr.equals(IP))
-                    {
-                        gateway_state.get(i).unready = false;
-                        logger.warn("Блокировщик выключен для станци " + gateway_state.get(i).IPaddr);
-                    }
-
-                }        
+            
+               radiopc.IsBusy = false;
+            logger.warn("Статус свободен");
+            
+            }
             
             
-          }    
             
         }
+        
         
 }

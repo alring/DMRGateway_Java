@@ -42,7 +42,6 @@ public class ClientToServer
     {
             this.gateway=gateway;
             socketReader= new SocketReader();
-
     }
          
          
@@ -268,7 +267,9 @@ WriteToSocket(s);
             Gson gson= new Gson();
             String s= gson.toJson(command);
 WriteToSocket(s);
-        } catch (Exception ex) {
+        } 
+        
+        catch (Exception ex) {
             logger.error(ex.getMessage(),ex.fillInStackTrace());
             IsConnected=false;
         }
@@ -370,9 +371,7 @@ WriteToSocket(s);
               
               
               public void SendIsBusyToServer(int answer,String fromip,int toid,int type, String gatewayIP)
-    {
-        logger.warn("отправка занятости на сервер");
-                
+    {   
         if(!IsConnected)return;
         try {
             id++;
@@ -532,6 +531,7 @@ WriteToSocket(s);
     {
         if(IsConnected)
         try {
+            logger.warn(s);
             s=Aes128.getInstance().encrypt(s);
            
             writer.write(s);
@@ -577,7 +577,8 @@ WriteToSocket(s);
                      if(command.command.equals("ConnectionLimit"))  
                {
                        gateway.serverHasLimit=true;
-                       logger.warn("Превышен лимит подключений шлюзов к серверу");      
+                       logger.warn("Превышен лимит подключений шлюзов к серверу");   
+                      // new WarningWindow(null, "Превышен лимит подключений шлюзов к серверу")
                }
                     
                     
@@ -656,15 +657,15 @@ WriteToSocket(s);
                  
                   if(command.command.equals("OutgoingCall"))
                {      
-                   
-                   
+               
+                  logger.warn("НАЧАЛО ВЫЗОВА-----------------------");
                   String fromip = (String)command.arguments.get("sourceip"); 
                   int fromid = Integer.parseInt((String)command.arguments.get("operatorid"));
                   int to=Integer.parseInt((String)command.arguments.get("destinationid"));  
                   int type=Integer.parseInt((String)command.arguments.get("type"));           
                   String pcip=(String)command.arguments.get("pcgatewayip");       
                   String radioip=(String)command.arguments.get("radiogatewayip"); 
-                   
+                  gateway.rccService.txModeOnly = true;
                   
                   
                    int port=GetFreeUDPPort(10000, 20000);
@@ -685,6 +686,7 @@ WriteToSocket(s);
                      {
                             if(stationPC.rtpMediaSession.operatorid==fromid)stationPC.rtpMediaSession.StopSession();
                             else {
+                                logger.warn("point1");
                                 SendIsBusyToServer(1, fromip, to, type, radioip);
                                 return;}
                      }
@@ -693,7 +695,6 @@ WriteToSocket(s);
 
                    stationPC.rtpMediaSession.StartSession(port, fromid);         
                    
-                   logger.warn("Вызов функции makecall");   
                    if (!gateway.rccService.MakeCallToRadio(fromip,radioip, to, type))
                        gateway.client.SendIsBusyToServer(1, fromip, to, type, radioip);
                    
@@ -703,22 +704,23 @@ WriteToSocket(s);
                }   
                    if( command.command.equals("StopOutgoingCall"))
                {  
-                    
-                    logger.warn("Вызов функции release ptt");
+                  
+                    logger.warn("ОКОНЧАНИЕ ВЫЗОВА---------------------------");
                     String pcip=(String)command.arguments.get("pcgatewayip");       
                     String radioip=(String)command.arguments.get("radiogatewayip"); 
-                     gateway.GetRadiostatinPCByIP(String.valueOf(radioip)).rtpMediaSession.StopSession();
-                     gateway.rccService.MakeReleasePTT(radioip);
+                    gateway.GetRadiostatinPCByIP(String.valueOf(radioip)).rtpMediaSession.StopSession();
+                    gateway.rccService.MakeReleasePTT(radioip);
+                    
                   
                }
                   
                    if(command.command.equals("IncomingCallReply"))
-               {      
+               {     
                 //gateway.rccService.MakeCallToRadio(Integer.parseInt(comand.arguments[0]),Integer.parseInt(comand.arguments[1]));
                    int port= Integer.parseInt((String)command.arguments.get("port"));
                    String radioip=(String)command.arguments.get("radiogatewayip");
                     if(IsConnected)gateway.GetRadiostatinPCByIP(String.valueOf(radioip)).rtpMediaSession.StartSession(port-1, serverIP, port);
-                   
+                   logger.warn("ВХОД ЗВОНОК ОК----------------------");
                }
                   if(command.command.equals("GetRadioGatewaysReply"))
                {
@@ -779,7 +781,7 @@ WriteToSocket(s);
             try {
                
                String s= ReadData();
-             
+               logger.warn(s);
                if(s==null)break;
                Gson gson= new Gson();
                Command command = gson.fromJson(s, Command.class);

@@ -34,9 +34,10 @@ public class RadioStationPC
     public boolean IsBusy;
     int offline_count=0;
     public  RtpMediaSession rtpMediaSession;
-   public int selected_mic=0;
-   public int selected_speak=0;
-
+    public int selected_mic=0;
+    public int selected_speak=0;
+    public boolean accepted_ptt = false;
+    
    public jpcap.NetworkInterface netcard=null;
     
     StationPanel stationPanel;
@@ -112,6 +113,9 @@ public class RadioStationPC
          }
          return 0;
     }
+        
+     synchronized boolean getAcceptPtt(){return accepted_ptt;}
+     synchronized void setAcceptPtt(boolean new_state){accepted_ptt = new_state;}
         
        public SoundManager GetSoundmanager()
     {
