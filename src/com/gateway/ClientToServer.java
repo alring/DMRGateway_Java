@@ -665,16 +665,11 @@ WriteToSocket(s);
                   int type=Integer.parseInt((String)command.arguments.get("type"));           
                   String pcip=(String)command.arguments.get("pcgatewayip");       
                   String radioip=(String)command.arguments.get("radiogatewayip"); 
-                  gateway.rccService.txModeOnly = true;
                   
                   
                    int port=GetFreeUDPPort(10000, 20000);
                    OutgoingCallReply(command,port);
-//                   String fromip= comand.arguments[0];
-//                   int to= Integer.parseInt(comand.arguments[2]);
-//                   int type= Integer.parseInt(comand.arguments[3]);
-//                   String radioip=comand.arguments[4];
-//                   String pcip=comand.arguments[5];
+
                            
                    RadioStationPC stationPC= gateway.GetRadiostatinPCByIP(String.valueOf(radioip));
                    
@@ -695,16 +690,19 @@ WriteToSocket(s);
 
                    stationPC.rtpMediaSession.StartSession(port, fromid);         
                    
-                   if (!gateway.rccService.MakeCallToRadio(fromip,radioip, to, type))
-                       gateway.client.SendIsBusyToServer(1, fromip, to, type, radioip);
                    
-                     
+                   
+
+                      
+                  gateway.rccService.MakeCallToRadio(fromip,radioip, to, type);
+                          
                    
                  
                }   
                    if( command.command.equals("StopOutgoingCall"))
                {  
-                  
+                    //if (gateway.rccService.isGatewayBusy) return;
+                    
                     logger.warn("ОКОНЧАНИЕ ВЫЗОВА---------------------------");
                     String pcip=(String)command.arguments.get("pcgatewayip");       
                     String radioip=(String)command.arguments.get("radiogatewayip"); 

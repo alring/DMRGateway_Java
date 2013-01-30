@@ -38,7 +38,8 @@ public class RCCPacket
     public static final int CONNECTION_REJECT=0x00FC;
     public static final int MASTER_BROADCAST=0x00FF;
     public static final int CN_REQUEST=0x00FE;
-
+    
+    
     
     
     
@@ -77,9 +78,14 @@ public class RCCPacket
          public class Key
         {  
     public static final int PTT=0x001E;
-
+   
         }
 
+         public class KeyOper
+         {
+             public static final int PRESS = 0x0001;
+             public static final int RELEASE = 0x0000;
+         }
     
     byte[] Packet;
     HRNPPacket hrnpPacket= new HRNPPacket();
@@ -125,6 +131,7 @@ public class RCCPacket
     {
     }
     
+        
         public  boolean ChecksumOk()
     {
          int hrnp_sum = hrnpPacket.GetChecksum(Packet,Packet.length);
@@ -163,6 +170,14 @@ public class RCCPacket
     
     }
     
+      public int GetKeyOper()
+      {
+           return ((Packet[25]));
+      }
+        
+        
+        
+        
       public  byte GetChecksum(byte[] packet,int d) 
     {
                                 

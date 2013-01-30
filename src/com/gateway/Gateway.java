@@ -47,7 +47,6 @@ public class Gateway
     long lastNetCheckTime=0;
     long soundCheckTimer=Calendar.getInstance().getTimeInMillis();
     public boolean serverHasLimit=false;
-    public boolean txModeOnly = false;
 
     public Gateway(MainWindow mainWindow) 
     {

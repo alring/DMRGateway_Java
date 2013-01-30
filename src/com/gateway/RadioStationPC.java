@@ -47,13 +47,15 @@ public class RadioStationPC
     static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(RadioStationPC.class);
     
     public Status status= new Status();
-    
+    public typeOperation TypeOperation  = new typeOperation();
        public class Status
     {
     
+     /*
     public boolean pttreplyOK=false;
     public boolean releasepttreplyOK=false;
     public boolean callreplyOK=false;
+    */
     public boolean connectreplyOK=false;
     public boolean rxtxreplyOK=false;
     public boolean killreplyOK=false;
@@ -62,10 +64,24 @@ public class RadioStationPC
     public boolean remotemonitorOK=false;
     public boolean radiocheckOK=false;
     
-    public boolean ReleasePTTInProcess=false;
-    
+   // public boolean ReleasePTTInProcess=false;
+           
+    public boolean pttPressACK = false;
+    public boolean pttReleaseACK = false;
+    public boolean generationCallACK = false;
+    public boolean txModeOnly = false;       
+    public int currentButtonOperation = 0;       
+           
     }
     
+   
+    public class typeOperation
+    {
+        public  int PRESS_PTT = 1;
+        public  int RELEASE_PTT = 2;
+        
+        public typeOperation(){}
+    }
     
 
     public RadioStationPC(String ip, Gateway gateway)
