@@ -150,10 +150,7 @@ public class RRSService
             
            }
         
-         }
-    
-        
-        
+         }  
         
     public class DataReceiver extends Thread   // Поток, в котором приходят сообщения от РС
     {
@@ -218,7 +215,7 @@ public class RRSService
                                  DatagramPacket reqPack= new DatagramPacket(request, request.length,receivePacket.getSocketAddress()); /*max added*/
                                  gateway.radioStations.get(i).setRequestPacket(reqPack);
                                  gateway.radioStations.get(i).registerTime=Calendar.getInstance().getTimeInMillis(); 
-                                 gateway.radioStations.get(i).timeToLive = 40; 
+                                 gateway.radioStations.get(i).timeToLive = 10; 
                                  gateway.radioStations.get(i).timeToLineBeforeOffline = 3;
                                  break;   
                              }
@@ -275,12 +272,12 @@ public class RRSService
                      
                        if(packet.GetOperation()==(byte)RRSPacket.Operation.ONLINEACK)
                       {
-                          System.out.println("Пришел ответ на запрос");
+                          logger.warn("Пришел ответ на запрос");
                           for(int i = 0; i < gateway.radioStations.size(); i++) // среди всех станции ищем ту,
                           {                                                     // от которой только что приняли пакет
                                gateway.radioStations.get(i).needRefresh = false;    
-                               gateway.radioStations.get(i).timeToLineBeforeOffline = 7; // (((( Не хардкодь!
-                               gateway.radioStations.get(i).timeToLive = 10;
+                               gateway.radioStations.get(i).timeToLineBeforeOffline = 10; // (((( Не хардкодь!
+                               gateway.radioStations.get(i).timeToLive = 3;
                               if (gateway.radioStations.get(i).ID == packet.GetStationID())
                               {
                                  gateway.radioStations.get(i).registerTime = Calendar.getInstance().getTimeInMillis(); 

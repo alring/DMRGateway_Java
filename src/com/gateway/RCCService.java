@@ -194,7 +194,7 @@ public class RCCService
                   radioPC.status.currentButtonOperation = radioPC.TypeOperation.PRESS_PTT; // Указываем, что было произведено НАЖАТИЕ кнопки
                   socket.send(sendPacket);        // отправили пакет
                
-                  for(int j = 0; j < 15; j++) // проверяем 150 мс получение ответа в потоке DataReciever
+                  for(int j = 0; j < 25; j++) // проверяем 250 мс получение ответа в потоке DataReciever
                   {
                       if(radioPC.status.generationCallACK == true) return true;
                       Thread.sleep(10);
@@ -380,7 +380,7 @@ public class RCCService
                         
                         if(packet.GetMakeCallReply()==RCCPacket.CallReplyStatus.FAILURE)
                         {
-                            int i=0;
+                            logger.warn("Generation call not replyed");
                         }
 
                    }
@@ -501,8 +501,8 @@ public class RCCService
                              {    
                                       if(reply==RCCPacket.CallReplyStatus.SUCCES)
                                       {
-                                        statioPC.status.pttReleaseACK = true;
-                                       statioPC.status.txModeOnly = true;   logger.warn("Входящие вызовы разрешены");// Устанавливаем разрешение на обработку входящих вызово 
+                                       statioPC.status.pttReleaseACK = true;
+                                       statioPC.status.txModeOnly = false;   logger.warn("Входящие вызовы разрешены");// Устанавливаем разрешение на обработку входящих вызово 
                                         logger.warn("PTT отпущена!");
                                       }
                             
@@ -516,7 +516,7 @@ public class RCCService
                           }
                       }
                      }
-             }
+             }              
             }         
         }
      }

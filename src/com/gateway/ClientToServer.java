@@ -693,8 +693,8 @@ WriteToSocket(s);
                    
                    
 
-                      
-                  gateway.rccService.MakeCallToRadio(fromip,radioip, to, type);
+                  if(!gateway.rccService.MakeCallToRadio(fromip,radioip, to, type))
+                        gateway.client.SendIsBusyToServer(1, fromip, to, type, radioip);
                           
                    
                  

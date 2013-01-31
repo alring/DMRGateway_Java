@@ -112,8 +112,8 @@ public class RRSPacket
        ack[9]=0x00;     //ok     //
        ack[10]=0x00;             //
        ack[11]=0x00;             //
-       ack[12]=0x01;             //
-       ack[13]=0x2C;    //50 sec
+       ack[12]=0x00;             //
+       ack[13]=(byte)0xC8;    //50 sec
        ack[14]= ChecksumACK(ack);    //chk sum
        ack[15]=0x03; 
        return ack;
