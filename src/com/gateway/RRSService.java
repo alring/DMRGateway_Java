@@ -127,7 +127,7 @@ public class RRSService
                           byte[] request = packet.GenerateRegACK(); // отправляем radio online status check request
                           sendPacket = gateway.radioStations.get(i).getRequestPacket();      
                           writeToSocket(sendPacket);    
-                          Thread.sleep(10000);
+                          Thread.sleep(300000);
                        }
                   }
                     
@@ -153,11 +153,7 @@ public class RRSService
          }  
         
     public class DataReceiver extends Thread   // Поток, в котором приходят сообщения от РС
-    {
-    //  byte[] receiveData = new byte[64];
-    
-      
-        
+    {    
         public DataReceiver()
         {
             
@@ -299,21 +295,7 @@ public class RRSService
                  
                 
                 }
-                
-                /*
-                   for(int i = 0; i < gateway.radioStations.size(); i++)  // Перебираем станции которые нужно рефрешить
-                   {
-                      
-                       if (gateway.radioStations.get(i).needRefresh == true) // и направляем запрос о наличии их в сети
-                       {
-                          logger.warn("Запрос состояния радиостанции, ID: "  + gateway.radioStations.get(i).ID );
-                          byte[] request = packet.GenerateOnlineRequest(gateway.radioStations.get(i).getArrayIP()); // отправляем radio online status check request
-                          DatagramPacket sendPacket= new DatagramPacket(request, request.length,receivePacket.getSocketAddress());
-                          socket.send(sendPacket);    
-                       }
-                   }
-                
-                */
+
                   
                     Thread.sleep(1000);
                 } catch (InterruptedException ex) 

@@ -194,10 +194,6 @@ WriteToSocket(s);
    
          public void SendCallToServer(final int fromid,final int toid,final int type, final String gatewayIP, final int direction)   //0 - private 1- group 2-all
     {
-//            new Thread(new Runnable() {
-//	        @Override
-//	        public void run() {
-	           
 
              
              if(!IsConnected)return;
