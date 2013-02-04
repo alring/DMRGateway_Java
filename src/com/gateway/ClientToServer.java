@@ -13,11 +13,8 @@ import java.util.*;
 import java.util.logging.Level;
 import org.apache.log4j.Logger;
 
-/**
- *
- * @author Alexandr
- * Remote procedure call
- */
+
+
 public class ClientToServer 
 {
          Socket socket;
@@ -246,6 +243,10 @@ WriteToSocket(s);
         }
            
     }
+                  
+                 
+                  
+                  
         public void SendRadioGatewayStateToServer(String radioip, int state)   //0 - offline 1- online
     {
                       if(!IsConnected)return;
@@ -364,9 +365,92 @@ WriteToSocket(s);
               }
               
               
+              public void SendFreeState(String gatewayIP)
+              {
+                  logger.warn(gatewayIP);
+                   if(!IsConnected)return;
+                  try 
+                  {
+                     id++;
+                     Command command= new Command();
+                     command.command="GatewayIsFree";
+                     command.id=id;
+                    //    command.arguments= new String[]{String.valueOf(answer),fromip,String.valueOf(toid),String.valueOf(type),gatewayIP};
+                    
+                     command.arguments.put("radiogatewayip", gatewayIP);
+            
+                    Gson gson= new Gson();
+                    String s= gson.toJson(command);
+                    WriteToSocket(s);
+                 } 
+                 catch (Exception ex) 
+                 {
+                    logger.error(ex.getMessage(),ex.fillInStackTrace());
+                    IsConnected=false;
+                 }
+              }
               
               
-              public void SendIsBusyToServer(int answer,String fromip,int toid,int type, String gatewayIP)
+              public void SendSuppressToServer(int answer,String fromip,int toid,int type, String gatewayIP)  // max added
+              {
+                  if(!IsConnected)return;
+                  try 
+                  {
+                     id++;
+                     Command command= new Command();
+                     command.command="SuppressionIncomingCall";
+                     command.id=id;
+                    //    command.arguments= new String[]{String.valueOf(answer),fromip,String.valueOf(toid),String.valueOf(type),gatewayIP};
+                     command.arguments.put("state", String.valueOf(answer));
+                     command.arguments.put("sourceip", fromip);
+                     command.arguments.put("destinationid", String.valueOf(toid));
+                     command.arguments.put("type", String.valueOf(type));
+                     command.arguments.put("radiogatewayip", gatewayIP);
+                     command.arguments.put("pcgatewayip", type);
+            
+                    Gson gson= new Gson();
+                    String s= gson.toJson(command);
+                    WriteToSocket(s);
+                 } 
+                 catch (Exception ex) 
+                 {
+                    logger.error(ex.getMessage(),ex.fillInStackTrace());
+                    IsConnected=false;
+                 }
+              }      
+
+              
+              
+             public void SendSuppressDelirivedToServer(int answer,String fromip,int toid,int type, String gatewayIP)  // max added
+              {
+                  if(!IsConnected)return;
+                  try 
+                  {
+                     id++;
+                     Command command= new Command();
+                     command.command="SuppressionIsDelirived";
+                     command.id=id;
+                    //    command.arguments= new String[]{String.valueOf(answer),fromip,String.valueOf(toid),String.valueOf(type),gatewayIP};
+                     command.arguments.put("state", String.valueOf(answer));
+                     command.arguments.put("sourceip", fromip);
+                     command.arguments.put("destinationid", String.valueOf(toid));
+                     command.arguments.put("type", String.valueOf(type));
+                     command.arguments.put("radiogatewayip", gatewayIP);
+            
+                    Gson gson= new Gson();
+                    String s= gson.toJson(command);
+                    WriteToSocket(s);
+                 } 
+                 catch (Exception ex) 
+                 {
+                    logger.error(ex.getMessage(),ex.fillInStackTrace());
+                    IsConnected=false;
+                 }
+              }
+            
+             
+              
+            public void SendIsBusyToServer(int answer,String fromip,int toid,int type, String gatewayIP)
     {   
         if(!IsConnected)return;
         try {
@@ -419,9 +503,7 @@ WriteToSocket(s);
         }
            
     }
-             
-             
-              
+                         
               
          public void SendMyTypeToServer(int type) //указываем серверу что это соединение от шлюза 0x00-администратор 0x01 - шлюз 0x02 - диспетчер
          {
@@ -446,7 +528,7 @@ WriteToSocket(s);
            
         }
          
-                  public void GetRadioGatewaysFromServer()
+         public void GetRadioGatewaysFromServer()
     {
         if(!IsConnected)return;
         try {
@@ -466,44 +548,7 @@ WriteToSocket(s);
     }
                   
                   
-                  
-                  
-//         public void SendOnlineRadiostationToServer(int type) 
-//         {
-//        try {
-//            id++;
-//            Command command= new Command();
-//            command.command="GetOnlineRadiostationsReply";
-//            command.id=id;
-//                   //проверяем есть ли давно отвалившиеся
-//                   long time_now=Calendar.getInstance().getTimeInMillis();
-//                   int online_cnt=0;
-//                  for(int i=0;i<gateway.radioStations.size();i++)
-//                  {
-//                  if((time_now-gateway.radioStations.get(i).regtime)>60000)gateway.radioStations.get(i).IsOnline=false;
-//                  else online_cnt++;
-//                  }
-//                  //
-//                   command.arguments= new String[online_cnt];
-//                   for(int i=0;i<command.arguments.length;i++)
-//                  {
-//                  if(gateway.radioStations.get(i).IsOnline)command.arguments[i]= String.valueOf(gateway.radioStations.get(i).ID);
-//                  }
-//            
-//            Gson gson= new Gson();
-//            String s= gson.toJson(command);
-//            writer.write(s);
-//            writer.newLine();
-//            writer.flush();
-//        } 
-//          catch (IOException ex) 
-//        {
-//            logger.error(ex);
-//            IsConnected=false;
-//        }
-//           
-//        }
-                  
+          
       public void OutgoingCallReply(Command comand, int port)
                     {
                         if(!IsConnected)return;
@@ -559,16 +604,13 @@ WriteToSocket(s);
 
             @Override
             public void run() 
-            {
-                //logger.info("Command "+command.command.toString()+ " thread start");
-                
+            {   
             
                 
                 try
                 {
                     
-                        
-                    
+                       
                     
                      if(command.command.equals("ConnectionLimit"))  
                {
@@ -650,6 +692,12 @@ WriteToSocket(s);
                    if(type==1) //групповое сообщение 
                    gateway.messageService.SendGroupMessageToRadio(to,radioip,text,dispatcherIP,id);
                }
+                
+                 
+                 
+              
+                 
+                 
                  
                   if(command.command.equals("OutgoingCall"))
                {      
@@ -686,18 +734,25 @@ WriteToSocket(s);
 
                    stationPC.rtpMediaSession.StartSession(port, fromid);         
                    
-                   
+                   if(gateway.rccService.currentStatus == gateway.rccService.workStatus.INCOMING_CALL) // Если шлюз в состоянии приема
+                    {                                                                                  // отправляем диспетчеру сообщение о подавлении входящего
+                        gateway.client.SendSuppressToServer(1, fromip, to, type, radioip);
+                    }
                    
 
-                  if(!gateway.rccService.MakeCallToRadio(fromip,radioip, to, type))
-                        gateway.client.SendIsBusyToServer(1, fromip, to, type, radioip);
-                          
-                   
+                  if(!gateway.rccService.MakeCallToRadio(fromip,radioip, to, type)) // если не удалось сгенерить вызов - шлем серверу сообщение от занятости
+                        gateway.client.SendIsBusyToServer(1, fromip, to, type, radioip); // если 
+                 
+                  /*
+                  else if(gateway.rccService.currentStatus == gateway.rccService.workStatus.INCOMING_CALL) // но если все-таки вернул тру
+                    {                                                                                  
+                      //  gateway.client.SendSuppressDelirivedToServer(1, fromip, to, type, radioip);        // и подавил прием, то шлем сигнал о завершении вызова
+                    }     
+                   */
                  
                }   
                    if( command.command.equals("StopOutgoingCall"))
                {  
-                    //if (gateway.rccService.isGatewayBusy) return;
                     
                     logger.warn("ОКОНЧАНИЕ ВЫЗОВА---------------------------");
                     String pcip=(String)command.arguments.get("pcgatewayip");       
@@ -783,154 +838,6 @@ WriteToSocket(s);
                new Thread(new CommandProcessor(command)).start();
               
                
-//                      if(command.command.equals("MobileRadioMonitor"))
-//               { 
-//                  // int state =Integer.parseInt(comand.arguments[1]);
-//                   int id=Integer.parseInt((String)command.arguments.get("mobileid")); 
-//                   RadioStation station=  gateway.GetRadiostatinByID(id);
-//                   if(station!=null)gateway.rccService.MakeRemoteMonitorToRadio(station.PcRadioIPAdress, id);
-//               }
-//               
-//                if(command.command.equals("SetGpsState"))
-//               { 
-//                   int state =Integer.parseInt((String)command.arguments.get("state")); 
-//                   int id=Integer.parseInt((String)command.arguments.get("mobileid")); 
-//                   if(state==0)gateway.locationService.StopReport(id);
-//                   if(state==1)
-//                   {
-//                       gateway.locationService.StartReport(id);
-//                       // gateway.locationService.ImmadiateRequest(id);
-//                   }
-//               }
-//               
-//                   if(command.command.equals("SetMobileRadioLiveState"))
-//               {   
-//                   
-////                   String radioip=command.arguments[2];   
-////                   int state =Integer.parseInt(command.arguments[1]);
-////                   int id=Integer.parseInt(command.arguments[0]);
-//                   
-//                   int id =Integer.parseInt((String)command.arguments.get("mobileid"));   
-//                   int state =Integer.parseInt((String)command.arguments.get("state"));  
-//                   String pcip=(String)command.arguments.get("pcgatewayip");       
-//                   String radioip=(String)command.arguments.get("radiogatewayip"); 
-//                   
-//                   
-//                   if(state==0)
-//                   gateway.rccService.MakeKillToRadio(radioip, id);
-//                   if(state==1)
-//                   gateway.rccService.MakeLiveRadio(radioip, id);
-//               }
-//
-//                 if(command.command.equals("OutgoingMessage"))
-//               {      
-//                   //int type=Integer.parseInt(command.arguments[3]);
-//                   //String dispatcherIP=command.arguments[0];
-//                   //int id=Integer.parseInt(command.arguments[7]);
-//                   
-//                   
-//                         String pcip=(String)command.arguments.get("pcgatewayip");       
-//                         String radioip=(String)command.arguments.get("radiogatewayip"); 
-//                         //int from=(Integer)(command.arguments.get("operatorid"));
-//                         int to=Integer.parseInt((String)(command.arguments.get("destinationid")));
-//                         int type=Integer.parseInt((String)(command.arguments.get("type")));
-//                         int id=Integer.parseInt((String)(command.arguments.get("textid")));
-//                         String text=(String)(command.arguments.get("text"));
-//                         String dispatcherIP=(String)(command.arguments.get("sourceip"));
-//                   
-//                   if(type==0) //индивидуальное сообщение
-//                   gateway.messageService.SendPrivatMessageToRadio(to,text,dispatcherIP,id);
-//                   if(type==1) //групповое сообщение 
-//                   gateway.messageService.SendGroupMessageToRadio(to,radioip,text,dispatcherIP,id);
-//               }
-//                 
-//                  if(command.command.equals("OutgoingCall"))
-//               {      
-//                   int port=GetFreeUDPPort(10000, 20000);
-//                   OutgoingCallReply(command,port);
-////                   String fromip= comand.arguments[0];
-////                   int to= Integer.parseInt(comand.arguments[2]);
-////                   int type= Integer.parseInt(comand.arguments[3]);
-////                   String radioip=comand.arguments[4];
-////                   String pcip=comand.arguments[5];
-//                   
-//                  String fromip = (String)command.arguments.get("sourceip"); 
-//                  int fromid = Integer.parseInt((String)command.arguments.get("operatorid"));
-//                  int to=Integer.parseInt((String)command.arguments.get("destinationid"));  
-//                  int type=Integer.parseInt((String)command.arguments.get("type"));           
-//                  String pcip=(String)command.arguments.get("pcgatewayip");       
-//                  String radioip=(String)command.arguments.get("radiogatewayip"); 
-//                   
-//                   
-//                   RadioStationPC stationPC= gateway.GetRadiostatinPCByIP(String.valueOf(radioip));
-//                   if(stationPC.rtpMediaSession.IsActive) 
-//                   {
-//                    if(stationPC.rtpMediaSession.direction==0) stationPC.rtpMediaSession.StopSession();
-//                        if(stationPC.rtpMediaSession.direction==1)  
-//                     {
-//                            if(stationPC.rtpMediaSession.operatorid==fromid)stationPC.rtpMediaSession.StopSession();
-//                            else {SendIsBusyToServer(1, fromip, to, type, radioip);continue;}
-//                     }
-//                     
-//                   }
-//
-//                   stationPC.rtpMediaSession.StartSession(port, fromid);
-//                   gateway.rccService.MakeCallToRadio(fromip,radioip, to, type);
-//                     
-//               }
-//                  
-//                   if(command.command.equals("StopOutgoingCall"))
-//               {  
-//                   
-//                  String pcip=(String)command.arguments.get("pcgatewayip");       
-//                  String radioip=(String)command.arguments.get("radiogatewayip"); 
-//                   
-//                   gateway.GetRadiostatinPCByIP(String.valueOf(radioip)).rtpMediaSession.StopSession();
-//                   gateway.rccService.MakeReleasePTT(radioip);
-//               }
-//                  
-//                      if(command.command.equals("IncomingCallReply"))
-//               {      
-//                //gateway.rccService.MakeCallToRadio(Integer.parseInt(comand.arguments[0]),Integer.parseInt(comand.arguments[1]));
-//                   int port= Integer.parseInt((String)command.arguments.get("port"));
-//                   String radioip=(String)command.arguments.get("radiogatewayip");
-//                    gateway.GetRadiostatinPCByIP(String.valueOf(radioip)).rtpMediaSession.StartSession(port-1, serverIP, port);
-//                   
-//               }
-//                  if(command.command.equals("GetRadioGatewaysReply"))
-//               {
-//                   
-//                //gateway.radioStationsPC.clear();
-//                List<RadioStationPC> newradioStations= new ArrayList<RadioStationPC>();
-//                List<String> radiogateways=(ArrayList)command.arguments.get("radiogatewaylist");
-//                
-//                for(int i=0;i<radiogateways.size();i++)
-//                {
-//                newradioStations.add(new RadioStationPC(radiogateways.get(i),gateway));
-//                  for(int j=0;j<gateway.radioStationsPC.size();j++)
-//                {
-//                    if(newradioStations.get(i).IPAdress.equals(gateway.radioStationsPC.get(j).IPAdress))
-//                    {
-//                    newradioStations.get(i).selected_mic=gateway.radioStationsPC.get(j).selected_mic;
-//                    newradioStations.get(i).selected_speak=gateway.radioStationsPC.get(j).selected_speak;
-//                    }
-//                }
-//                
-//                }
-//                for(int i=0;i<gateway.radioStationsPC.size();i++)
-//                {
-//                    try
-//                    {
-//                gateway.radioStationsPC.get(i).status_thread.interrupt();
-//                    }
-//                    catch(Exception ex){};
-//                }
-//                
-//                gateway.radioStationsPC.clear();
-//                gateway.radioStationsPC=newradioStations;
-//                
-//                   gateway.RefreshGatewayPanels();
-//               }
                     
 
             } 
