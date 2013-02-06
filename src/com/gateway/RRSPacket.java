@@ -113,7 +113,7 @@ public class RRSPacket
        ack[10]=0x00;             //
        ack[11]=0x00;             //
        ack[12]=0x00;             //
-       ack[13]=(byte)0xC8;    //4 минуты
+       ack[13]=(byte)0xFF;       //4.5 минуты
        ack[14]= ChecksumACK(ack);    //chk sum
        ack[15]=0x03; 
        return ack;
@@ -121,7 +121,8 @@ public class RRSPacket
       
         public int  GetStationID()        
       {
-          return (((Packet[6]<<16)&0xFF0000)|((Packet[7]<<8)&0xFF00)|((Packet[8])&0xFF));
+          int result = (((Packet[6]<<16)&0xFF0000)|((Packet[7]<<8)&0xFF00)|((Packet[8])&0xFF));
+          return result;
       }
         
           public byte[]  GetStationIP()        

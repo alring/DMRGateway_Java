@@ -338,8 +338,9 @@ public class Gateway
                       if( (radioStations.get(i).timeToLineBeforeOffline==0)) // Если истекло время опроса РC
                       {    
                        if(radioStations.get(i).timeToLive == 0) continue;                                         // отключаем ее на сервере, но продолжаем опрашивать,
-                       client.SendMobileRadioStateToServer(radioStations.get(i).ID, 0, radioStations.get(i).PcRadioIPAdress); // пока не истечет время timeTolive
+                       client.SendMobileRadioStateToServer(radioStations.get(i).ID, 2, radioStations.get(i).PcRadioIPAdress); // пока не истечет время timeTolive
                        logger.info("Отключение объекта ID="+radioStations.get(i).ID+", превышено время ожидания регистрации.");
+                       radioStations.get(i).needRefresh = false;
                        radioStations.get(i).timeToLineBeforeOffline = -1; 
                       }
                       else
@@ -352,6 +353,7 @@ public class Gateway
                       if (radioStations.get(i).timeToLive == 0)       
                       {
                        radioStations.get(i).IsOnline=false;
+                       logger.info("Прекращены запросы к объекту: " + radioStations.get(i).ID);
                        radioStations.get(i).needRefresh = false;
                       }
                   }
@@ -359,15 +361,6 @@ public class Gateway
               
               
               
-//              if((Calendar.getInstance().getTimeInMillis()-soundCheckTimer)/1000>9)    //обновляем список аудиоустройств
-//              {
-//              soundManager.RefreshAudioDevices();    
-//              for(int i=0;i<radioStationsPC.size();i++)
-//              {
-//              if(radioStationsPC.get(i).stationPanel!=null)radioStationsPC.get(i).stationPanel.Refresh();
-//              }
-//              soundCheckTimer=Calendar.getInstance().getTimeInMillis();
-//              }
 
             try 
             {

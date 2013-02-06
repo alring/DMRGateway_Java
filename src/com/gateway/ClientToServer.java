@@ -390,6 +390,31 @@ WriteToSocket(s);
                  }
               }
               
+              public void SendCallEndToServer(String gatewayIP)
+              {
+                  
+                   if(!IsConnected)return;
+                  try 
+                  {
+                     id++;
+                     Command command= new Command();
+                     command.command="CallIsEnd";
+                     command.id=id;
+                    //
+                     command.arguments.put("radiogatewayip", gatewayIP);
+            
+                    Gson gson= new Gson();
+                    String s= gson.toJson(command);
+                    WriteToSocket(s);
+                 } 
+                 catch (Exception ex) 
+                 {
+                    logger.error(ex.getMessage(),ex.fillInStackTrace());
+                    IsConnected=false;
+                 }
+              }
+              
+              
               
               public void SendSuppressToServer(int answer,String fromip,int toid,int type, String gatewayIP)  // max added
               {
@@ -505,7 +530,7 @@ WriteToSocket(s);
     }
                          
               
-         public void SendMyTypeToServer(int type) //указываем серверу что это соединение от шлюза 0x00-администратор 0x01 - шлюз 0x02 - диспетчер
+    public void SendMyTypeToServer(int type) //указываем серверу что это соединение от шлюза 0x00-администратор 0x01 - шлюз 0x02 - диспетчер
          {
              if(!IsConnected)return;
         try {
@@ -528,7 +553,7 @@ WriteToSocket(s);
            
         }
          
-         public void GetRadioGatewaysFromServer()
+    public void GetRadioGatewaysFromServer()
     {
         if(!IsConnected)return;
         try {
@@ -549,10 +574,11 @@ WriteToSocket(s);
                   
                   
           
-      public void OutgoingCallReply(Command comand, int port)
-                    {
+    public void OutgoingCallReply(Command comand, int port)
+     {
                         if(!IsConnected)return;
-            try {
+            try 
+        {
             Gson gson= new Gson();
             Command replycommand= new Command();
             replycommand.arguments=comand.arguments;
@@ -561,18 +587,18 @@ WriteToSocket(s);
             replycommand.id=id++;
             String s=gson.toJson(replycommand);
             WriteToSocket(s);
-        } catch (Exception ex) {
+        } catch (Exception ex) 
+        {
             logger.error(ex.getMessage(),ex.fillInStackTrace());
-        }
-                    
-                    }
+        }               
+     }
          
          
     synchronized public void WriteToSocket(String s)
     {
         if(IsConnected)
         try {
-            logger.warn(s);
+           // logger.warn(s);
             s=Aes128.getInstance().encrypt(s);
            
             writer.write(s);
@@ -616,7 +642,7 @@ WriteToSocket(s);
                {
                        gateway.serverHasLimit=true;
                        logger.warn("Превышен лимит подключений шлюзов к серверу");   
-                      // new WarningWindow(null, "Превышен лимит подключений шлюзов к серверу")
+                       new WarningWindow(null, "Превышен лимит подключений шлюзов к серверу");
                }
                     
                     
@@ -669,6 +695,11 @@ WriteToSocket(s);
                    gateway.rccService.MakeKillToRadio(radioip, id);
                    if(state==1)
                    gateway.rccService.MakeLiveRadio(radioip, id);
+                   if(state==2) // отложенная блокировка
+                   gateway.rccService.MakeDeferredKillRadio(radioip,id);
+                   if(state==3) // отложенная разблокировка
+                   gateway.rccService.MakeStopDeferredKillRadio(radioip,id);
+                           
                }
 
                  if(command.command.equals("OutgoingMessage"))
@@ -830,7 +861,7 @@ WriteToSocket(s);
             try {
                
                String s= ReadData();
-               logger.warn(s);
+              // logger.warn(s);
                if(s==null)break;
                Gson gson= new Gson();
                Command command = gson.fromJson(s, Command.class);
@@ -905,7 +936,7 @@ WriteToSocket(s);
         
 
     }
-            public class Command
+    public class Command
         {
         public HashMap arguments = new HashMap();        
         long id;
@@ -914,7 +945,7 @@ WriteToSocket(s);
         //String[] arguments;
         }
            
-        public int GetFreeUDPPort(int min, int max)
+    public int GetFreeUDPPort(int min, int max)
     {   
         Random random = new Random();
         int res; 

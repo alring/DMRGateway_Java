@@ -71,7 +71,7 @@ public class RadioStationPC
     public boolean generationCallACK = false;
     public boolean txModeOnly = false;       
     public int currentButtonOperation = 0;       
-           
+    public boolean stopDeferredKill = false;       
     }
     
    

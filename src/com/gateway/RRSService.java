@@ -95,23 +95,7 @@ public class RRSService
               try {
                  Thread.sleep(1000); 
                  
-                for(int i = 0; i < gateway.radioStations.size();i++)
-                 {
-                 
-                      /*                
-                    if (gateway.radioStations.get(i).needRefresh == true) // и направляем запрос о наличии их в сети
-                    {
-                          logger.warn("Запрос состояния радиостанции, ID: "  + gateway.radioStations.get(i).ID );
-                          byte[] request = packet.GenerateOnlineRequest(gateway.radioStations.get(i).getArrayIP()); // отправляем radio online status check request
-
-                          requestPacket = new DatagramPacket(request, request.length,receivePacket.getSocketAddress());
-                               
-                          writeToSocket(requestPacket);    
-                     } 
-                        */  
-
-                          
-                  }
+   
                        
                     
                   for(int i = 0; i < gateway.radioStations.size(); i++)  // Перебираем станции которые нужно рефрешить
@@ -124,14 +108,16 @@ public class RRSService
                           {
                               gateway.radioStations.get(i).needRefresh = false; // перестаем сканировать эфир
                           }
-                          byte[] request = packet.GenerateRegACK(); // отправляем radio online status check request
                           sendPacket = gateway.radioStations.get(i).getRequestPacket();      
+                          if(sendPacket == null) logger.warn("Send packet is null");
+            
                           writeToSocket(sendPacket);    
-                          Thread.sleep(300000);
+                          Thread.sleep(10000);
+                          
                        }
                   }
                     
-                    
+                 Thread.sleep(10000);   
                 }
                 catch (SocketException ex) 
                 {
@@ -193,7 +179,7 @@ public class RRSService
                        DatagramPacket sendPacket= new DatagramPacket(answer, answer.length,receivePacket.getSocketAddress());
                        
                        writeToSocket(sendPacket);
-                       RadioStation radio= new RadioStation(receivePacket.getAddress().toString()); 
+                       RadioStation radio = new RadioStation(receivePacket.getAddress().toString()); 
                        String fromip=radio.IPAdress;
                        int subnet=Integer.parseInt(fromip.split("\\.")[0]);
                        RadioStationPC radioPC= gateway.GetRadiostatinPCBySubnet(subnet);
@@ -201,7 +187,39 @@ public class RRSService
                        radio.PcRadioIPAdress=radioPC.IPAdress;
                        radio.setArrayIP(packet.GetStationIP()); // пихаем в массив IP станции, которая прислала запрос на регистрацию
                        boolean add= true;
-                       for(int i=0;i<gateway.radioStations.size();i++)
+                       
+                       
+                       
+                       
+                       for(int i=0;i<gateway.radioStations.size();i++) // костыль, исп
+                       {
+                       if(gateway.radioStations.get(i).ID==radio.ID)      // ищем есть ли уже
+                             {
+                                 add = false;                           // нашли - не добавляем
+                             }                      
+                       }
+                       
+                       
+                       if(add)
+                       {             
+                           gateway.radioStations.add(radio); 
+                           gateway.client.SendMobileRadioStateToServer(radio.ID,1,radioPC.IPAdress); logger.info("Регистрация обьекта ID="+radio.ID);
+                       }
+                       else
+                       {
+                           gateway.client.SendMobileRadioStateToServer(radio.ID,1,radioPC.IPAdress);
+                       if(!gateway.GetRadiostatinByID(radio.ID).IsOnline) 
+                       {
+                           logger.info("Регистрация обьекта ID="+radio.ID); 
+
+                       }
+                       gateway.GetRadiostatinByID(radio.ID).IsOnline=true;
+                       }
+                       
+                       
+                       
+                       
+                       for(int i=0;i<gateway.radioStations.size();i++)  // инициализируем TTL и формируем запрос для этой станции
                        {
                        if(gateway.radioStations.get(i).ID==radio.ID)
                              {
@@ -211,26 +229,14 @@ public class RRSService
                                  DatagramPacket reqPack= new DatagramPacket(request, request.length,receivePacket.getSocketAddress()); /*max added*/
                                  gateway.radioStations.get(i).setRequestPacket(reqPack);
                                  gateway.radioStations.get(i).registerTime=Calendar.getInstance().getTimeInMillis(); 
-                                 gateway.radioStations.get(i).timeToLive = 10; 
+                                 gateway.radioStations.get(i).timeToLive = 7; 
                                  gateway.radioStations.get(i).timeToLineBeforeOffline = 3;
                                  break;   
                              }
                        }
                        
                       // Thread.sleep(500);
-                       if(add){
-                           gateway.radioStations.add(radio); gateway.client.SendMobileRadioStateToServer(radio.ID,1,radioPC.IPAdress); logger.info("Регистрация обьекта ID="+radio.ID);
-                          // gateway.rccService.MakeRadioCheckToRadio(radioPC.IPAdress, radio.ID);
-                       }
-                       else
-                      // if(!gateway.GetRadiostatinByID(radio.ID).IsOnline)
-                       {gateway.client.SendMobileRadioStateToServer(radio.ID,1,radioPC.IPAdress);
-                       if(!gateway.GetRadiostatinByID(radio.ID).IsOnline) 
-                       {
-                           logger.info("Регистрация обьекта ID="+radio.ID); 
-                         //  gateway.rccService.MakeRadioCheckToRadio(radioPC.IPAdress, radio.ID);
-                       }
-                       gateway.GetRadiostatinByID(radio.ID).IsOnline=true;}
+                       
                        
                        
                      //  gateway.rccService.MakeLiveRadio("192.168.1.115", "192.168.10.60", 104);
@@ -246,6 +252,7 @@ public class RRSService
                       if(packet.GetOperation()==RRSPacket.Operation.DEREGISTRATION)
                     {
                         logger.warn("Получено сообщение о переходе в оффлайн режим, ID: " + packet.GetStationID());
+                       
                         int id=packet.GetStationID();
                         RadioStation radio= gateway.GetRadiostatinByID(packet.GetStationID());
                         if(radio==null) continue;
@@ -272,8 +279,8 @@ public class RRSService
                           for(int i = 0; i < gateway.radioStations.size(); i++) // среди всех станции ищем ту,
                           {                                                     // от которой только что приняли пакет
                                gateway.radioStations.get(i).needRefresh = false;    
-                               gateway.radioStations.get(i).timeToLineBeforeOffline = 10; // (((( Не хардкодь!
-                               gateway.radioStations.get(i).timeToLive = 3;
+                               gateway.radioStations.get(i).timeToLineBeforeOffline = 3; // (((( Не хардкодь!
+                               gateway.radioStations.get(i).timeToLive = 7;
                               if (gateway.radioStations.get(i).ID == packet.GetStationID())
                               {
                                  gateway.radioStations.get(i).registerTime = Calendar.getInstance().getTimeInMillis(); 

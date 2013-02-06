@@ -19,8 +19,8 @@ public class RadioStation
     byte[] arrayIP = new byte[4];
     int Subnet;
     public boolean needRefresh = false;
-    public long timeToLive = 10;       // цикл опроса
-    public long timeToLineBeforeOffline = 5; // цикло опроса до перевода в выключенное состояние
+    public long timeToLive = 6;       // цикл опроса
+    public long timeToLineBeforeOffline = 3; // цикло опроса до перевода в выключенное состояние
     boolean IsOnline= false;
     public long registerTime;
     boolean gpsIsOn=false;

@@ -110,7 +110,7 @@ public class MessageService
            while(messages.contains(m))
                    {
             count++;
-           if(count>8)
+           if(count>20)
            {
                gateway.client.SendMessageIsDeliveredToServer(msgId, dispIP,0);
                break;

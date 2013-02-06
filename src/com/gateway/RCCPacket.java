@@ -371,7 +371,34 @@ public class RCCPacket
            
            return Packet;
        }
-              public byte[] GenerateReleasePTT()
+              
+                    
+         /*
+        public byte[] GenerateCheckStatusPacket()
+        {
+            
+           Packet= new byte[9];
+           Packet[0]=(byte)Type;
+           //почемуто в пакете байты должны быть на оборот
+           Packet[1]=
+           Packet[2]=
+           Packet[3]=
+           Packet[4]=
+           Packet[5]=
+           Packet[6]=
+           Packet[7]=
+           Packet[8]=
+           Packet[9]=
+           Packet[10]=(byte)(0x03);
+           Packet[11]=
+            
+            
+            
+            return Packet;
+        }
+         */           
+                    
+         public byte[] GenerateReleasePTT()
        {
  
            Packet= new byte[9];
