@@ -37,6 +37,8 @@ public class RadioStationPC
     public int selected_mic=0;
     public int selected_speak=0;
     public boolean accepted_ptt = false;
+    public boolean stopDeferred = false; // переменная, по которой определяется завершение опроса убийства
+    
     
    public jpcap.NetworkInterface netcard=null;
     

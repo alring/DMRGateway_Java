@@ -173,28 +173,39 @@ public class RCCService
    }
    
    
+    public void MakeStartDefferedKillRadio(String gatewayIP, int toid)
+    {
+        
+        DeferredBlock radioKiller = new DeferredBlock(gatewayIP,toid);
+        radioKiller.Start();
+    }
+   
    
      public void MakeDeferredKillRadio(String gatewayIP,int toid)   // отложенное убийство
      {
+           logger.warn("Начата процедура отложенного убийства, ID " + toid);
            RadioStationPC statioPC= gateway.GetRadiostatinPCByIP(gatewayIP);
-              while((!statioPC.status.killreplyOK) || (!statioPC.status.stopDeferredKill))                        
+            statioPC.status.stopDeferredKill=false  ;
+            statioPC.status.killreplyOK=false;
+              while((statioPC.status.killreplyOK==false) || (statioPC.status.stopDeferredKill==false))                        
                {    
                   RCCPacket packet = new RCCPacket();
                   byte[] pack =packet.GenerateKill(toid);
                   try
                   {
+                      
                       DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCByIP(gatewayIP).RealIPAdress),Port);
+                      if(statioPC.status.stopDeferredKill == true) break;
+                      if(statioPC.status.killreplyOK == true) break;
                       socket.send(sendPacket);
-                      Thread.sleep(150000);
+                      Thread.sleep(15000);
                   }
                   catch(Exception ex)
                   {
                     logger.error(ex);
                   }
-            statioPC.status.stopDeferredKill=false  ;
-              
               }
-
+           logger.warn("Закончена процедура отложенного убийства, ID " + toid);
      }
      
      
@@ -203,6 +214,7 @@ public class RCCService
         {
             
            RadioStationPC statioPC= gateway.GetRadiostatinPCByIP(gatewayIP);
+           statioPC.status.stopDeferredKill = true;
              for(int i=0;i<3;i++)                           
              {  
                RCCPacket packet = new RCCPacket();
@@ -244,7 +256,7 @@ public class RCCService
                   radioPC.status.currentButtonOperation = radioPC.TypeOperation.PRESS_PTT; // Указываем, что было произведено НАЖАТИЕ кнопки
                   socket.send(sendPacket);        // отправили пакет
                
-                  for(int j = 0; j < waitTime; j++) // проверяем 250 мс получение ответа в потоке DataReciever
+                  for(int j = 0; j < waitTime; j++) // проверяем 400 мс получение ответа в потоке DataReciever
                   {
                       if(radioPC.status.generationCallACK == true) 
                       {
@@ -711,6 +723,37 @@ public class RCCService
           }
       }   
   }   
+  
+  public class DeferredBlock implements Runnable
+  {
+      Thread thr;
+      Gateway gateway;
+      String gatewayIP = "";
+      public int toid;
+
+      
+      public DeferredBlock(String newgatewayIP,int newtoid)
+      {
+          gatewayIP = newgatewayIP;
+          toid = newtoid;
+          thr = new Thread(this,"DeferrBlock");
+       
+      }
+      
+      public void Start()
+      {
+             thr.start();
+      }
+      
+      public void run()
+      {
+         MakeDeferredKillRadio(gatewayIP,toid);
+      }
+      
+      
+  }
+  
+  
 }
       
     

@@ -5,10 +5,7 @@
 package com.gateway;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -25,6 +22,7 @@ import org.apache.log4j.Logger;
 public class RRSService 
 {
     int Port;
+    String ipAdd;
     DatagramSocket socket;
     DatagramPacket receivePacket;
     DatagramPacket sendPacket;
@@ -39,6 +37,7 @@ public class RRSService
     public RRSService(int Port,Gateway gateway) 
     {
         this.Port = Port; 
+        packet = new RRSPacket();
         receivePacket = new DatagramPacket(receiveData, receiveData.length);
         this.gateway=gateway;
         try {
@@ -70,6 +69,33 @@ public class RRSService
     
     }
     
+        
+   public void CheckOnlineRadio(int ID) throws UnknownHostException, IOException
+   {
+      RRSPacket packetik = new RRSPacket(); 
+      logger.warn("Ручной запрос состояния радиостанции, ID: " +ID);
+      byte[] ipAddr = new byte[4];
+      int DestIp;
+      String addr;
+      for(int j = 0; j < gateway.radioStationsPC.size();j++)
+      {
+          //addr = gateway.radioStationsPC.get(j).RealIPAdress;
+          DestIp = (0x00FFFFFF & ID)|(((gateway.radioStationsPC.get(j).Subnet)<<24) & 0xFF000000);
+          ipAddr[0] = (byte)(DestIp); 
+          ipAddr[1] = (byte)(DestIp>>8); 
+          ipAddr[2] = (byte)(DestIp>>16); 
+          ipAddr[3] = (byte)(DestIp>>24); 
+          addr = Integer.toString(DestIp);
+           byte[] requestPack = packetik.GenerateOnlineRequest(ipAddr);
+           DatagramPacket sendPack = new DatagramPacket(requestPack,requestPack.length,InetAddress.getByName(addr),Port);
+           socket.send(sendPack);
+          
+      }
+              
+              
+
+   }
+        
         
     public class OnlineChecker extends Thread  // Поток, опрашивающий зависшые станции
     {
@@ -224,7 +250,6 @@ public class RRSService
                        if(gateway.radioStations.get(i).ID==radio.ID)
                              {
                                  add=false;
-                                 
                                  byte[] request = packet.GenerateOnlineRequest(gateway.radioStations.get(i).getArrayIP()); /*max added*/
                                  DatagramPacket reqPack= new DatagramPacket(request, request.length,receivePacket.getSocketAddress()); /*max added*/
                                  gateway.radioStations.get(i).setRequestPacket(reqPack);

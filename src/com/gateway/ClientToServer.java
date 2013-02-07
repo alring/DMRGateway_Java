@@ -598,7 +598,7 @@ WriteToSocket(s);
     {
         if(IsConnected)
         try {
-           // logger.warn(s);
+           //logger.warn(s);
             s=Aes128.getInstance().encrypt(s);
            
             writer.write(s);
@@ -678,6 +678,16 @@ WriteToSocket(s);
                    
                }
                
+                 if(command.command.equals("CheckOnlineRadio"))
+               {   
+                   
+                  
+                   int id =Integer.parseInt((String)command.arguments.get("destinationid"));   
+                   gateway.rrsService.CheckOnlineRadio(id);
+                           
+               }
+                
+                
                    if(command.command.equals("SetMobileRadioLiveState"))
                {   
                    
@@ -861,7 +871,7 @@ WriteToSocket(s);
             try {
                
                String s= ReadData();
-              // logger.warn(s);
+               logger.warn(s);
                if(s==null)break;
                Gson gson= new Gson();
                Command command = gson.fromJson(s, Command.class);

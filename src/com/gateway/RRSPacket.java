@@ -155,7 +155,10 @@ public class RRSPacket
         return request;
     }
         
-    
+    public RRSPacket()
+    {
+        
+    }
     public RRSPacket(byte[] packet)
     {
        this.Packet=packet;
