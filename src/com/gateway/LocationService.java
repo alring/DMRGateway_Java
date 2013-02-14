@@ -88,9 +88,9 @@ public class LocationService
 //             }
         }
           
-                    public void StartReport(int radioid,byte[] data)  
+               public void StartReport(int radioid,byte[] data)  
         {
-            
+            startreportreplyOK = false;
               for(int i=0;i<2;i++)                           
              {   
            LocationPacket packet = new LocationPacket();
@@ -101,7 +101,7 @@ public class LocationService
            try
            {
            //DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCBySubnet(station.Subnet).RealIPAdress),Port);
-               DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(station.IPAdress),Port);
+           DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(station.IPAdress),Port); 
            socket.send(sendPacket);
            }
            catch(Exception ex)
@@ -126,15 +126,15 @@ public class LocationService
             
               for(int i=0;i<1;i++)                           
              {   
+                 logger.warn("Req pack");
            LocationPacket packet = new LocationPacket();
            RadioStation station= gateway.GetRadiostatinByID(radioid);
            if(station==null)return;
-           
            byte[] pack = packet.GenerateStartReport(++requestID,station.IPAdress);
            try
            {
            //DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCBySubnet(station.Subnet).RealIPAdress),Port);
-               DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(station.IPAdress),Port);
+           DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(station.IPAdress),Port);
            socket.send(sendPacket);
            }
            catch(Exception ex)
@@ -142,8 +142,8 @@ public class LocationService
             logger.error(ex);
            }
              try 
-            {
-            Thread.sleep(1500);
+             {
+              Thread.sleep(1500);
              } 
              catch (InterruptedException ex) 
              {
@@ -166,6 +166,7 @@ public class LocationService
            byte[] pack = packet.GenerateStopReport(++requestID,station.IPAdress);
            try
            {
+        
            //DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCBySubnet(station.Subnet).RealIPAdress),Port);
                DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(station.IPAdress),Port);
            socket.send(sendPacket);
@@ -196,6 +197,7 @@ public class LocationService
         public void run() {
            while(!Thread.interrupted())
             {   
+                
                 try {
                 socket.receive(receivePacket);   
                 LocationPacket packet = new LocationPacket(receivePacket.getData());
@@ -203,14 +205,15 @@ public class LocationService
                 {
                 if(packet.IsLocationPacket())
                 {
+                    logger.warn("GET LOCATION PACK");
                         if(packet.GetOperation()==LocationPacket.Operation.SLIS_ANSWER)
                     {
-                        boolean state= packet.GetGpsStateImmadiate();
-                        int id =packet.GetRadioID();
+                          logger.warn("SLIS ANSWER");
+                        boolean state = packet.GetGpsStateImmadiate();
+                        int id = packet.GetRadioID();
                         
                         if(state && !gateway.GetRadiostatinByID(id).gpsIsOn)
                         {
-                        
                         StartReport(id,packet.Packet);
                         }
                     }
@@ -220,6 +223,7 @@ public class LocationService
                     {
                         if(packet.GetResult()==LocationPacket.Result.SUCCES || packet.GetResult()==LocationPacket.Result.NOVALIDGPS)
                         {
+                         logger.warn("get TLRS report answer packet");
                          startreportreplyOK=true;
                          int id =packet.GetRadioID();
                          gateway.GetRadiostatinByID(id).gpsIsOn=true;
@@ -227,7 +231,7 @@ public class LocationService
                     }
                      if(packet.GetOperation()==LocationPacket.Operation.TLRS_REPORTSTOPANSWER)
                     {
-                        
+                        logger.warn("get TLRS report stop answer packet");
                          if(packet.GetResult()==LocationPacket.Result.SUCCES)
                         {
                         stopreportreplyOK=true;
@@ -236,26 +240,25 @@ public class LocationService
                     }
                      if(packet.GetOperation()==LocationPacket.Operation.TLRS_REPORT)
                     {
-//                           packet.GetTime();
-//                           packet.GetLatitude();
-//                           packet.GetLongitude();
-//                           packet.GetSpeed();
-//                           packet.GetDirection();
+                          logger.warn("get TLRS repor");
                            gateway.client.SendGpsToServer(packet.GetRadioID(), packet.GetLatitude(), packet.GetLongitude(), packet.GetSpeed(), packet.GetDirection(), packet.GetTime(),0);
                     }
                      
                      if(packet.GetOperation()==LocationPacket.Operation.ELRS_REPORT)
                     {
                         int type=packet.GetErrType();
+                        logger.warn("get ELRS report");
                         gateway.client.SendGpsToServer(packet.GetRadioID_err(), packet.GetLatitude_err(), packet.GetLongitude_err(), packet.GetSpeed_err(), packet.GetDirection_err(), packet.GetTime_err(),type);
                         
                     }
                        if(packet.GetOperation()==LocationPacket.Operation.ELRS_REPORTSTOPREQ)
                     {
+                        logger.warn("get TLRS report stop req packet");
                         int i=0;
                     }
                          if(packet.GetOperation()==LocationPacket.Operation.ELRS_REPORTSTOPANSWER)
                     {
+                        logger.warn("get TLRS report stop answer");
                         int i=0;
                     }
                 }

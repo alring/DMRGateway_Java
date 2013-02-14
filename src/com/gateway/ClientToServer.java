@@ -109,8 +109,10 @@ public class ClientToServer
         
                  public void SendGpsToServer(int fromid, double lat,double lon,double speed, int dir,long time,int errorType) 
     {
+            
              if(!IsConnected)return;
         try {
+            logger.info("Send GPS position to Server");
             id++;
             Command command= new Command();
             command.command="GpsPosition";
@@ -220,7 +222,7 @@ WriteToSocket(s);
         
     }
          
-                  public void SendMobileRadioStateToServer(int radioid,int state,String radioip)   //0 - offline 1- online
+      public void SendMobileRadioStateToServer(int radioid,int state,String radioip)   //0 - offline 1- online
     {
                       if(!IsConnected)return;
         try {
@@ -367,7 +369,7 @@ WriteToSocket(s);
               
               public void SendFreeState(String gatewayIP)
               {
-                  logger.warn(gatewayIP);
+                 
                    if(!IsConnected)return;
                   try 
                   {
@@ -598,7 +600,7 @@ WriteToSocket(s);
     {
         if(IsConnected)
         try {
-           //logger.warn(s);
+           
             s=Aes128.getInstance().encrypt(s);
            
             writer.write(s);
@@ -743,7 +745,6 @@ WriteToSocket(s);
                   if(command.command.equals("OutgoingCall"))
                {      
                
-                  logger.warn("НАЧАЛО ВЫЗОВА-----------------------");
                   String fromip = (String)command.arguments.get("sourceip"); 
                   int fromid = Integer.parseInt((String)command.arguments.get("operatorid"));
                   int to=Integer.parseInt((String)command.arguments.get("destinationid"));  
@@ -766,7 +767,7 @@ WriteToSocket(s);
                      {
                             if(stationPC.rtpMediaSession.operatorid==fromid)stationPC.rtpMediaSession.StopSession();
                             else {
-                                logger.warn("point1");
+                      
                                 SendIsBusyToServer(1, fromip, to, type, radioip);
                                 return;}
                      }
@@ -795,7 +796,7 @@ WriteToSocket(s);
                    if( command.command.equals("StopOutgoingCall"))
                {  
                     
-                    logger.warn("ОКОНЧАНИЕ ВЫЗОВА---------------------------");
+                   
                     String pcip=(String)command.arguments.get("pcgatewayip");       
                     String radioip=(String)command.arguments.get("radiogatewayip"); 
                     gateway.GetRadiostatinPCByIP(String.valueOf(radioip)).rtpMediaSession.StopSession();
@@ -810,7 +811,7 @@ WriteToSocket(s);
                    int port= Integer.parseInt((String)command.arguments.get("port"));
                    String radioip=(String)command.arguments.get("radiogatewayip");
                     if(IsConnected)gateway.GetRadiostatinPCByIP(String.valueOf(radioip)).rtpMediaSession.StartSession(port-1, serverIP, port);
-                   logger.warn("ВХОД ЗВОНОК ОК----------------------");
+        
                }
                   if(command.command.equals("GetRadioGatewaysReply"))
                {
@@ -871,7 +872,7 @@ WriteToSocket(s);
             try {
                
                String s= ReadData();
-               logger.warn(s);
+              
                if(s==null)break;
                Gson gson= new Gson();
                Command command = gson.fromJson(s, Command.class);

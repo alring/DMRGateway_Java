@@ -24,8 +24,12 @@ public class RadioStation
     boolean IsOnline= false;
     public long registerTime;
     boolean gpsIsOn=false;
+    public boolean stopDeferredKill = false;
+    
     
     DatagramPacket requestPacket; 
+    
+    
             
     public DatagramPacket getRequestPacket()
     {

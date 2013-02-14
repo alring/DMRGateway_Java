@@ -185,9 +185,9 @@ public class RCCService
      {
            logger.warn("Начата процедура отложенного убийства, ID " + toid);
            RadioStationPC statioPC= gateway.GetRadiostatinPCByIP(gatewayIP);
-            statioPC.status.stopDeferredKill=false  ;
-            statioPC.status.killreplyOK=false;
-              while((statioPC.status.killreplyOK==false) || (statioPC.status.stopDeferredKill==false))                        
+           RadioStation radio = gateway.GetRadiostatinByID(toid);
+            radio.stopDeferredKill = false;
+              while((radio.stopDeferredKill==false))                        
                {    
                   RCCPacket packet = new RCCPacket();
                   byte[] pack =packet.GenerateKill(toid);
@@ -195,10 +195,9 @@ public class RCCService
                   {
                       
                       DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCByIP(gatewayIP).RealIPAdress),Port);
-                      if(statioPC.status.stopDeferredKill == true) break;
-                      if(statioPC.status.killreplyOK == true) break;
+                      if(radio.stopDeferredKill == true) break;
                       socket.send(sendPacket);
-                      Thread.sleep(15000);
+                      Thread.sleep(150000);
                   }
                   catch(Exception ex)
                   {
@@ -239,7 +238,7 @@ public class RCCService
         {     
              isGatewayBusy = true; // признак занятости шлюза
              RadioStationPC radioPC = gateway.GetRadiostatinPCByIP(gatewayIP);   // берем значение из листа 
-             radioPC.status.txModeOnly = true; logger.warn("Входящие вызовы запрещены");
+             radioPC.status.txModeOnly = true; 
              if (radioPC.IsBusy) return false;                                   // если занят, то возвращаем фолс вызывающему методу
              
              radioPC.status.generationCallACK = false;
@@ -252,7 +251,6 @@ public class RCCService
                   RCCPacket packet = new RCCPacket();
                   byte[] pack = packet.GenerateMakeCall(toid,type);
                   DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCByIP(gatewayIP).RealIPAdress),Port);
-                  logger.warn("Отправка пакета с генерацией вызова");
                   radioPC.status.currentButtonOperation = radioPC.TypeOperation.PRESS_PTT; // Указываем, что было произведено НАЖАТИЕ кнопки
                   socket.send(sendPacket);        // отправили пакет
                
@@ -323,7 +321,6 @@ public class RCCService
                  try
                  {
                       DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCByIP(ipAddr).RealIPAdress),Port);
-                      logger.warn("Отправка пакета отпускания PTT");
                       Thread.sleep(50);
                       socket.send(sendPacket);
                  }
@@ -473,6 +470,8 @@ public class RCCService
                         {
                           statioPC.status.killreplyOK=true;
                           int id=packet.GetKillRadioID();
+                          RadioStation radio = gateway.GetRadiostatinByID(id);
+                          radio.stopDeferredKill = true;
                           // String radioip=receivePacket.getAddress().toString().replace("/", "");
                            gateway.client.SendMobileRadioLiveStateToServer(id, 0);
                         }
@@ -488,7 +487,7 @@ public class RCCService
                    {
                         if(packet.GetMakeCallReply()==RCCPacket.CallReplyStatus.SUCCES)
                         {
-                        logger.warn("Подтверждение генерации вызова");    
+                       
                         statioPC.status.generationCallACK = true;
                         statioPC.status.txModeOnly = true;
                         new MakePressPTT(receivePacket.getAddress().toString().replace("/", ""));
@@ -535,7 +534,8 @@ public class RCCService
                         {
                             radioStationPC.rtpMediaSession.StopSession();
                             type=0;         //звонок в состоянии ожидания
-                            logger.warn("end hangtime");
+                          
+                            statioPC.status.txModeOnly = false; // на всякий случай
                             radioStationPC.stationPanel.SetState("Входяший вызов (ожидание ответа)");
                             gateway.client.SendStopCallToServer(SenderID, TargetID, type, radioStationPC.IPAdress); //type указываеьт на тип завершения звонка
                             currentStatus = workStatus.IDLE_STATE;
@@ -568,7 +568,7 @@ public class RCCService
                             
                             radioStationPC.rtpMediaSession.StopSession();
                             radioStationPC.stationPanel.SetState("Свободен");
-                            logger.warn("Получено сообщение от РС от конце вызова");
+                      
                             if(!statioPC.status.pttReleaseACK)statioPC.status.pttReleaseACK=true;
                             statioPC.status.txModeOnly = false;
                             currentStatus = workStatus.IDLE_STATE;
@@ -577,7 +577,7 @@ public class RCCService
                         
                         if(packet.GetCallStatus()==RCCPacket.CallStatus.HANGTIME)
                         {
-                            logger.warn("Переход в режим ожидания ответа");
+                          
                             radioStationPC.stationPanel.SetState("Исходящий вызов (ожидание ответа)");
                             statioPC.status.txModeOnly = false;
                             if(!statioPC.status.pttReleaseACK)  //если вызов с тангеты
@@ -614,7 +614,7 @@ public class RCCService
                                       if(reply==RCCPacket.CallReplyStatus.SUCCES)
                                       {
                                         statioPC.status.pttPressACK = true;
-                                        logger.warn("PTT нажата!");
+                                        
                                       }
                             
                                       if(reply==RCCPacket.CallReplyStatus.FAILURE)

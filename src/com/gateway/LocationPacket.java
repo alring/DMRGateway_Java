@@ -21,7 +21,7 @@ public class LocationPacket
      
      
      
-         public class Operation 
+      public class Operation 
         { 
     public static final int SLIS_REQUEST=0xA001;  //(Standard Location Immediate Service)
     public static final int SLIS_ANSWER=0xA002;
@@ -37,10 +37,8 @@ public class LocationPacket
     public static final int TLRS_REPORTSTOPANSWER=0xC005;
 
        }
-  
-         
-         
-          public class Result
+     
+      public class Result
         {  
     public static final int SUCCES=0x0000;
     public static final int FAILURE=0x0001;
@@ -53,7 +51,7 @@ public class LocationPacket
        this.Packet=packet;
     }
       
-       public LocationPacket()
+      public LocationPacket()
     {
     }
     
@@ -76,9 +74,9 @@ public class LocationPacket
     
     }
       
-            public  byte GetChecksum(byte[] packet) 
+      public  byte GetChecksum(byte[] packet) 
     {
-                                    int PayloadSize=(int)((int)((packet[3]<<8) &0xFF00)|packet[4]&0xFF); 
+                                  int PayloadSize=(int)((int)((packet[3]<<8) &0xFF00)|packet[4]&0xFF); 
                                  //int PayloadSize=(int)((int)(packet[3]<<8)|packet[4]);   
                                  byte Checksum = (byte)(packet[1]+packet[2]);
                                  Checksum+=packet[3]+packet[4];
@@ -94,18 +92,18 @@ public class LocationPacket
     return (byte)Checksum;
     }
             
-         public  boolean IsLocationPacket()
+       public  boolean IsLocationPacket()
     {
         return(Type==Packet[0]);
         
     }
          
-        public int  GetOperation()        
+       public int  GetOperation()        
       {
           return (((Packet[1]<<8)&0xFF00)|(Packet[2]&0xFF));
       }
         
-                public byte[] GenerateImmadiateRequest(int id,String ip)
+       public byte[] GenerateImmadiateRequest(int id,String ip)
       {
        byte[] pack= new byte[15];
        pack[0]=Type;
@@ -129,7 +127,7 @@ public class LocationPacket
        
       }
         
-                public byte[] GenerateStartReport(int id,String ip,byte[] data)
+       public byte[] GenerateStartReport(int id,String ip,byte[] data)
       {
        byte[] pack= new byte[51];
        pack[0]=Type;
@@ -187,8 +185,8 @@ public class LocationPacket
        pack[44]=0x30;
        pack[45]=0x30; 
        pack[46]=0x30;
-       pack[47]=0x30; 
-       pack[48]=0x35;  //5 сек
+       pack[47]=0x33; 
+       pack[48]=0x30;  //30 сек
        
        
        pack[49]=GetChecksum(pack);
@@ -198,7 +196,7 @@ public class LocationPacket
        return pack;
       }         
         
-        public byte[] GenerateStartReport(int id,String ip)
+       public byte[] GenerateStartReport(int id,String ip)
       {
        byte[] pack= new byte[51];
        pack[0]=Type;
@@ -214,45 +212,46 @@ public class LocationPacket
        pack[10]=(byte)(Integer.parseInt(ip.split("\\.")[1]));
        pack[11]=(byte)(Integer.parseInt(ip.split("\\.")[2]));
        pack[12]=(byte)(Integer.parseInt(ip.split("\\.")[3]));
-       pack[13]=0x30;
-       pack[14]=0x30; 
-       pack[15]=0x30; 
-       pack[16]=0x30; 
-       pack[17]=0x30; 
-       pack[18]=0x30; 
-       pack[19]=0x30; 
-       pack[20]=0x30; 
-       pack[21]=0x30; 
-       pack[22]=0x30; 
-       pack[23]=0x30; 
-       pack[24]=0x30; 
-       pack[25]=0x30; 
-       pack[26]=0x30; 
+       
+       pack[13]=0x30; // start time
+       pack[14]=0x30; // start time
+       pack[15]=0x30; // start time
+       pack[16]=0x30; // start time
+       pack[17]=0x30; // start time
+       pack[18]=0x30; // start time
+       pack[19]=0x30; // start time
+       pack[20]=0x30; // start time
+       pack[21]=0x30; // start time
+       pack[22]=0x30; // start time
+       pack[23]=0x30; // start time
+       pack[24]=0x30; // start time
+       pack[25]=0x30; // start time
+       pack[26]=0x30; // start time
        
 
        //
-       pack[27]=0x30; 
-       pack[28]=0x30; 
-       pack[29]=0x30; 
-       pack[30]=0x30;
-       pack[31]=0x30; 
-       pack[32]=0x30;
-       pack[33]=0x30; 
-       pack[34]=0x30;
-       pack[35]=0x30; 
-       pack[36]=0x30;
-       pack[37]=0x30; 
-       pack[38]=0x30;
-       pack[39]=0x30; 
-       pack[40]=0x30;
+       pack[27]=0x30; // stop time
+       pack[28]=0x30; // stop time
+       pack[29]=0x30; // stop time
+       pack[30]=0x30;// stop time
+       pack[31]=0x30; // stop time
+       pack[32]=0x30;// stop time
+       pack[33]=0x30; // stop time
+       pack[34]=0x30;// stop time
+       pack[35]=0x30; // stop time
+       pack[36]=0x30;// stop time
+       pack[37]=0x30; // stop time
+       pack[38]=0x30;// stop time
+       pack[39]=0x30; // stop time
+       pack[40]=0x30;// stop time
        //
-       pack[41]=0x30; 
-       pack[42]=0x30;
-       pack[43]=0x30; 
-       pack[44]=0x30;
-       pack[45]=0x30; 
-       pack[46]=0x30;
-       pack[47]=0x30; 
+       pack[41]=0x30; // interval
+       pack[42]=0x30;// interval
+       pack[43]=0x30; // interval; 
+       pack[44]=0x30;// interval
+       pack[45]=0x30; // interval
+       pack[46]=0x30;// interval
+       pack[47]=0x30; // interval
        pack[48]=0x39;  //5 сек
        
        
@@ -263,7 +262,7 @@ public class LocationPacket
        return pack;
       }
         
-               public byte[] GenerateStopReport(int id,String ip)
+       public byte[] GenerateStopReport(int id,String ip)
       {
        byte[] pack= new byte[15];
        pack[0]=Type;
@@ -284,10 +283,11 @@ public class LocationPacket
        pack[14]=0x03;
        
 
+       
        return pack;
       } 
                
-        public int GetResult()
+       public int GetResult()
       {
           return (((Packet[13]<<8)&0xFF00)|(Packet[14]&0xFF));
       }   
