@@ -360,13 +360,11 @@ public class RCCPacket
            Packet[2]=(byte)0x00;
            Packet[3]=0x02;
            Packet[4]=0x00;
-           Packet[5]=0x1E;   //ptt
-           Packet[6]=0x01;   //press
+           Packet[5]=0x1E;   //ptt // target 1E
+           Packet[6]=0x01;   //press // action 01
            Packet[7]=GetChecksum(Packet,0);
            Packet[8]=(byte)(0x03);
 
-           
-           
            Packet=hrnpPacket.GenerateDataPacket(Packet);
            
            return Packet;

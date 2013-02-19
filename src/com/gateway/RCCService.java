@@ -134,12 +134,13 @@ public class RCCService
                        logger.error(ex);
                   }  
                if(statioPC.status.remotemonitorOK){statioPC.status.remotemonitorOK=false;return;} 
-             }                  
+             }     
+             gateway.client.SendMakeRemoteMonitorToServer(toid, gatewayIP, 0);
          }   
   
    /*--------------------------------------------------------------------------*/
 
-   public void MakeKillToRadio(String gatewayIP,int toid)    // Убийство
+   public void MakeKillToRadio(String gatewayIP,int toid, String dispip)    // Убийство
         {
             
               RadioStationPC statioPC= gateway.GetRadiostatinPCByIP(gatewayIP);
@@ -158,9 +159,10 @@ public class RCCService
                   {
                     logger.error(ex);
                   }
-                 if(statioPC.status.killreplyOK){statioPC.status.killreplyOK=false;return;} 
+                 if(statioPC.status.killreplyOK){statioPC.status.killreplyOK=false;logger.warn("выход по получению ответа");return;} 
               }      
-                     
+              logger.warn("dispip " + dispip);
+              gateway.client.SendMakeKillToServer(toid, dispip, 0);       
         }  
   
    /*--------------------------------------------------------------------------*/ 
@@ -209,7 +211,7 @@ public class RCCService
      
      
      
-     public void MakeLiveRadio(String gatewayIP,int toid)  // Оживление
+     public void MakeLiveRadio(String gatewayIP,int toid, String dispip)  // Оживление
         {
             
            RadioStationPC statioPC= gateway.GetRadiostatinPCByIP(gatewayIP);
@@ -229,7 +231,8 @@ public class RCCService
                 logger.error(ex);
                }
                if(statioPC.status.livereplyOK){statioPC.status.livereplyOK=false;return;} 
-             }               
+             }    
+            gateway.client.SendMakeLiveToServer(toid, dispip, 0); 
         }  
    
    /*--------------------------------------------------------------------------*/ 
@@ -291,6 +294,11 @@ public class RCCService
          
     }
   
+    
+    public void _MakePressPTT(String radioip)               // запуск в другом потоке
+    {
+        new MakePressPTT(radioip);
+    }
 
 /*****************************************************************************
  *****************************************************************************
@@ -526,6 +534,7 @@ public class RCCService
                             logger.warn("end recv call");
                             gateway.client.SendStopCallToServer(SenderID, TargetID, type, radioStationPC.IPAdress);  //type указываеьт на тип завершения звонка
                             radioStationPC.stationPanel.SetState("Свободен");
+                             statioPC.status.pttPressACK = false;
                             gateway.client.SendFreeState(radioStationPC.IPAdress);
                             currentStatus = workStatus.IDLE_STATE;
                             
@@ -534,7 +543,7 @@ public class RCCService
                         {
                             radioStationPC.rtpMediaSession.StopSession();
                             type=0;         //звонок в состоянии ожидания
-                          
+                           
                             statioPC.status.txModeOnly = false; // на всякий случай
                             radioStationPC.stationPanel.SetState("Входяший вызов (ожидание ответа)");
                             gateway.client.SendStopCallToServer(SenderID, TargetID, type, radioStationPC.IPAdress); //type указываеьт на тип завершения звонка
@@ -553,6 +562,7 @@ public class RCCService
                         {
                           if((packet.GetCallStatus()==RCCPacket.CallStatus.START_CALL)  )
                           {
+                              logger.warn("start call, calltypeextptt: " + packet.GetCallTypeExtPTT() + " calltypetarget " + packet.GetCallTarget());
                                currentStatus = workStatus.OUTGOING_CALL;
                               radioStationPC.stationPanel.SetState("Исходящий вызов");
                               if(!statioPC.status.pttPressACK)  //если вызов с тангеты
@@ -561,14 +571,25 @@ public class RCCService
                                 int type=packet.GetCallTypeExtPTT();
                                 gateway.client.SendCallToServer(radioStationPC.ID, target, type, radioStationPC.IPAdress,2);
                               }
+                              /*
+                              int type = packet.GetCallTypeExtPTT();
+                              if(type==1)  //если вызов с тангеты
+                              {
+                                int target=packet.GetCallTargetExtPTT();
+                                logger.warn(type);
+                                gateway.client.SendCallToServer(radioStationPC.ID, target, type, radioStationPC.IPAdress,2);
+                              }*/
                           }
+                        
+                         
+                          
                           
                         if( (packet.GetCallStatus()==RCCPacket.CallStatus.END_CALL)  )
                         {     
                             
                             radioStationPC.rtpMediaSession.StopSession();
                             radioStationPC.stationPanel.SetState("Свободен");
-                      
+                 
                             if(!statioPC.status.pttReleaseACK)statioPC.status.pttReleaseACK=true;
                             statioPC.status.txModeOnly = false;
                             currentStatus = workStatus.IDLE_STATE;
@@ -678,7 +699,7 @@ public class RCCService
            try
            {
              DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(adr),Port);
-             logger.warn("Отправка пакета нажатия PPT");
+             logger.warn("Отправка пакета нажатия PTT");
              socket.send(sendPacket);
              Thread.sleep(100);
            }

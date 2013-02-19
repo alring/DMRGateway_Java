@@ -118,8 +118,9 @@ public class RRSService
            while(!Thread.interrupted())
            {
                 
-              try {
-                 Thread.sleep(1000); 
+              try 
+              {
+           
                  
    
                        
@@ -139,7 +140,7 @@ public class RRSService
             
                           writeToSocket(sendPacket);    
                           Thread.sleep(10000);
-                          
+                         
                        }
                   }
                     
@@ -200,10 +201,10 @@ public class RRSService
                     {
                        logger.warn("Получено сообщение подтверждение онлайн режима, ID: " + packet.GetStationID());
                        Thread.sleep(500);
-                       byte[] answer =packet.GenerateRegACK(); 
+                       
+                       byte[] answer =packet.GenerateRegACK();         
                        
                        DatagramPacket sendPacket= new DatagramPacket(answer, answer.length,receivePacket.getSocketAddress());
-                       
                        writeToSocket(sendPacket);
                        RadioStation radio = new RadioStation(receivePacket.getAddress().toString()); 
                        String fromip=radio.IPAdress;

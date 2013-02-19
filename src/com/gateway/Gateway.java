@@ -162,6 +162,7 @@ public class Gateway
                 
                 for(int i=0;i<devices.length;i++)
                 {
+                    logger.warn("descr: " + devices[i].description);
                 jpcap.NetworkInterface device= null;
                 if(devices[i].description.indexOf("Hytera Virtual Rndis")!=-1){device=devices[i];}
                 
@@ -333,7 +334,7 @@ public class Gateway
                   
                  long timenow=Calendar.getInstance().getTimeInMillis(); 
               if( (radioStations.get(i).IsOnline)  )
-                  if(((timenow-radioStations.get(i).registerTime)/1000)>300)
+                  if(((timenow-radioStations.get(i).registerTime)/1000)>3000)
                   {
                       if( (radioStations.get(i).timeToLineBeforeOffline==0)) // Если истекло время опроса РC
                       {    

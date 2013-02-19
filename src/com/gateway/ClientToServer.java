@@ -194,9 +194,9 @@ WriteToSocket(s);
          public void SendCallToServer(final int fromid,final int toid,final int type, final String gatewayIP, final int direction)   //0 - private 1- group 2-all
     {
 
-             
+             logger.warn("send call to server");
              if(!IsConnected)return;
-        try {
+             try {
             id++;
             Command command= new Command();
             command.command="IncomingCall";
@@ -211,8 +211,8 @@ WriteToSocket(s);
             
             Gson gson= new Gson();
             String s= gson.toJson(command);
-WriteToSocket(s);
-        } catch (Exception ex) {
+            WriteToSocket(s);
+            } catch (Exception ex) {
             logger.error(ex.getMessage(),ex.fillInStackTrace());
             IsConnected=false;
         }
@@ -376,6 +376,7 @@ WriteToSocket(s);
                      id++;
                      Command command= new Command();
                      command.command="GatewayIsFree";
+                     
                      command.id=id;
                     //    command.arguments= new String[]{String.valueOf(answer),fromip,String.valueOf(toid),String.valueOf(type),gatewayIP};
                     
@@ -530,7 +531,74 @@ WriteToSocket(s);
         }
            
     }
-                         
+         
+           
+    public void SendMakeKillToServer(int radioid,String dispIP,int state)  // max added
+    {
+           try
+           {
+            Command command= new Command();
+            command.command="MakeKillIsDelivered";
+            command.id=id;
+      //      command.arguments= new String[]{String.valueOf(timeId),dispIP};
+            
+            command.arguments.put("id", String.valueOf(radioid));
+            command.arguments.put("operatorip", dispIP);
+            command.arguments.put("state", String.valueOf(state));    
+            Gson gson= new Gson();
+            String s= gson.toJson(command);
+            WriteToSocket(s);
+           }
+           catch(Exception ex) 
+           {
+            logger.error(ex.getMessage(),ex.fillInStackTrace());
+            IsConnected=false;             
+           }
+    }
+    
+   
+    
+    public void SendMakeRemoteMonitorToServer(int radioid,String dispIP,int state)
+    {
+        try{
+            Command command= new Command();
+            command.command="MakeRemoteIsDelivered";
+            command.id=id;     
+            command.arguments.put("id", String.valueOf(radioid));
+            command.arguments.put("operatorip", dispIP);
+            command.arguments.put("state", String.valueOf(state)); 
+            Gson gson= new Gson();
+            String s= gson.toJson(command);
+            WriteToSocket(s);
+           }
+           catch(Exception ex) 
+           {
+            logger.error(ex.getMessage(),ex.fillInStackTrace());
+            IsConnected=false;             
+           }
+    }
+    
+    public void SendMakeLiveToServer(int radioid,String dispIP,int state)
+    {
+           try
+           {
+            Command command= new Command();
+            command.command="MakeLiveIsDelivered";
+            command.id=id;
+            command.arguments.put("id", String.valueOf(radioid));
+            command.arguments.put("operatorip", dispIP);
+            command.arguments.put("state", String.valueOf(state)); 
+            Gson gson= new Gson();
+            String s= gson.toJson(command);
+            WriteToSocket(s);
+           }
+           catch(Exception ex) 
+           {
+            logger.error(ex.getMessage(),ex.fillInStackTrace());
+            IsConnected=false;             
+           }
+    }
+    
               
     public void SendMyTypeToServer(int type) //указываем серверу что это соединение от шлюза 0x00-администратор 0x01 - шлюз 0x02 - диспетчер
          {
@@ -653,7 +721,7 @@ WriteToSocket(s);
                   // int state =Integer.parseInt(comand.arguments[1]);
                    int id=Integer.parseInt((String)command.arguments.get("mobileid")); 
                    RadioStation station = gateway.GetRadiostatinByID(id);
- 
+                   
                    if(station!=null)gateway.rccService.MakeRemoteMonitorToRadio(station.PcRadioIPAdress, id);
                }
                
@@ -701,12 +769,13 @@ WriteToSocket(s);
                    int state =Integer.parseInt((String)command.arguments.get("state"));  
                    String pcip=(String)command.arguments.get("pcgatewayip");       
                    String radioip=(String)command.arguments.get("radiogatewayip"); 
+                   String dispip = (String)command.arguments.get("sourceip");                      
                    
                    
                    if(state==0)
-                   gateway.rccService.MakeKillToRadio(radioip, id);
+                   gateway.rccService.MakeKillToRadio(radioip, id, dispip);
                    if(state==1)
-                   gateway.rccService.MakeLiveRadio(radioip, id);
+                   gateway.rccService.MakeLiveRadio(radioip, id, dispip);
                    if(state==2) // отложенная блокировка
                    gateway.rccService.MakeDeferredKillRadio(radioip,id);
                    if(state==3) // отложенная разблокировка
@@ -781,9 +850,9 @@ WriteToSocket(s);
                         gateway.client.SendSuppressToServer(1, fromip, to, type, radioip);
                     }
                    
-
+                  
                   if(!gateway.rccService.MakeCallToRadio(fromip,radioip, to, type)) // если не удалось сгенерить вызов - шлем серверу сообщение от занятости
-                        gateway.client.SendIsBusyToServer(1, fromip, to, type, radioip); // если 
+                      gateway.client.SendIsBusyToServer(1, fromip, to, type, radioip); // если 
                  
                   /*
                   else if(gateway.rccService.currentStatus == gateway.rccService.workStatus.INCOMING_CALL) // но если все-таки вернул тру
