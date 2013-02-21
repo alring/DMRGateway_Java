@@ -105,7 +105,10 @@ public class ClientToServer
     }
         
             
-        
+         public void RadioIsUnreachable()
+         {
+             
+         }
         
                  public void SendGpsToServer(int fromid, double lat,double lon,double speed, int dir,long time,int errorType) 
     {
@@ -141,8 +144,9 @@ WriteToSocket(s);
                  
                  
         
-                 public void SendMobileRadioLiveStateToServer(int radioid,int state)   //0 - dead, 1- live
+                   public void SendMobileRadioLiveStateToServer(int radioid,int state)   //0 - dead, 1- live
     {
+                      
              if(!IsConnected)return;
         try {
             id++;
@@ -156,7 +160,7 @@ WriteToSocket(s);
             
             Gson gson= new Gson();
             String s= gson.toJson(command);
-WriteToSocket(s);
+            WriteToSocket(s);
         } catch (Exception ex) {
             logger.error(ex.getMessage(),ex.fillInStackTrace());
             IsConnected=false;
@@ -164,6 +168,34 @@ WriteToSocket(s);
            
     }
         
+           
+       public void SendAnserMobileRadio(int radioid,int state)   //0 - dead, 1- live
+    {
+                      
+             if(!IsConnected)return;
+        try {
+            id++;
+            Command command= new Command();
+            command.command="MobileRadioLiveState";
+            command.id=id;
+           // command.arguments= new String[]{String.valueOf(radioid),String.valueOf(state)};
+            
+            command.arguments.put("sourceid", String.valueOf(radioid));
+            command.arguments.put("state", String.valueOf(state));
+            
+            Gson gson= new Gson();
+            String s= gson.toJson(command);
+            WriteToSocket(s);
+        } catch (Exception ex) {
+            logger.error(ex.getMessage(),ex.fillInStackTrace());
+            IsConnected=false;
+        }
+           
+    }           
+                   
+                   
+                   
+                   
          public void SendMessageToServer(int fromid, int toid,int type,String text) //1- групповое сообщение 0- индивидуальное
     {
              if(!IsConnected)return;
@@ -224,7 +256,7 @@ WriteToSocket(s);
          
       public void SendMobileRadioStateToServer(int radioid,int state,String radioip)   //0 - offline 1- online
     {
-                      if(!IsConnected)return;
+          // if(!IsConnected)return;
         try {
             id++;
             Command command= new Command();
@@ -239,6 +271,7 @@ WriteToSocket(s);
             Gson gson= new Gson();
             String s= gson.toJson(command);
 WriteToSocket(s);
+            
         } catch (Exception ex) {
             logger.error(ex.getMessage(),ex.fillInStackTrace());
             IsConnected=false;
@@ -566,6 +599,7 @@ WriteToSocket(s);
             command.id=id;     
             command.arguments.put("id", String.valueOf(radioid));
             command.arguments.put("operatorip", dispIP);
+            logger.warn("disp ip "+dispIP);
             command.arguments.put("state", String.valueOf(state)); 
             Gson gson= new Gson();
             String s= gson.toJson(command);
@@ -718,11 +752,17 @@ WriteToSocket(s);
                     
                 if(command.command.equals("MobileRadioMonitor"))
                { 
-                  // int state =Integer.parseInt(comand.arguments[1]);
+                 logger.warn("get radio mon");
                    int id=Integer.parseInt((String)command.arguments.get("mobileid")); 
                    RadioStation station = gateway.GetRadiostatinByID(id);
-                   
-                   if(station!=null)gateway.rccService.MakeRemoteMonitorToRadio(station.PcRadioIPAdress, id);
+                   String dispip = (String)command.arguments.get("sourceip");
+          
+                   if(station!=null){gateway.rccService.MakeRemoteMonitorToRadio(station.PcRadioIPAdress, id, dispip);}
+                   else 
+                   {
+                      
+                       gateway.client.SendMakeRemoteMonitorToServer(id, dispip, 0);
+                   }
                }
                
                 if(command.command.equals("SetGpsState"))
@@ -770,6 +810,8 @@ WriteToSocket(s);
                    String pcip=(String)command.arguments.get("pcgatewayip");       
                    String radioip=(String)command.arguments.get("radiogatewayip"); 
                    String dispip = (String)command.arguments.get("sourceip");                      
+                   
+                 
                    
                    
                    if(state==0)

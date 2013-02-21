@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 public class RRSService 
 {
     int Port;
-    String ipAdd;
+    public String ipAdd;
     DatagramSocket socket;
     DatagramPacket receivePacket;
     DatagramPacket sendPacket;
@@ -33,7 +33,8 @@ public class RRSService
     Gateway gateway;
     static Logger logger = Logger.getLogger(RRSService.class);
     RRSPacket packet;         
-       
+    boolean onlineCheckACK = false;   
+    
     public RRSService(int Port,Gateway gateway) 
     {
         this.Port = Port; 
@@ -301,19 +302,31 @@ public class RRSService
                      
                        if(packet.GetOperation()==(byte)RRSPacket.Operation.ONLINEACK)
                       {
-                          logger.warn("Пришел ответ на запрос");
+                 
+                          onlineCheckACK = true;            
+                          RadioStation radio = new RadioStation(receivePacket.getAddress().toString()); 
+                          String fromip=radio.IPAdress;
+                          int subnet=Integer.parseInt(fromip.split("\\.")[0]);
+                          RadioStationPC radioPC= gateway.GetRadiostatinPCBySubnet(subnet);
+                          if(radioPC==null) continue;
+                          radio.PcRadioIPAdress=radioPC.IPAdress;
+                          radio.setArrayIP(packet.GetStationIP()); // пихаем в массив IP станции, которая прислала запрос на регистрацию
+                          gateway.client.SendMobileRadioStateToServer(radio.ID,1,radioPC.IPAdress);
+                          
+                          
                           for(int i = 0; i < gateway.radioStations.size(); i++) // среди всех станции ищем ту,
                           {                                                     // от которой только что приняли пакет
-                               gateway.radioStations.get(i).needRefresh = false;    
-                               gateway.radioStations.get(i).timeToLineBeforeOffline = 3; // (((( Не хардкодь!
-                               gateway.radioStations.get(i).timeToLive = 7;
+                              
                               if (gateway.radioStations.get(i).ID == packet.GetStationID())
                               {
+                                 gateway.radioStations.get(i).needRefresh = false;    
+                                 gateway.radioStations.get(i).timeToLineBeforeOffline = 3; // (((( Не хардкодь!
+                                 gateway.radioStations.get(i).timeToLive = 7;
                                  gateway.radioStations.get(i).registerTime = Calendar.getInstance().getTimeInMillis(); 
+                                
                               }
                           }
-                          
-                          
+
                           
                       }
                     

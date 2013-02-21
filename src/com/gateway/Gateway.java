@@ -133,8 +133,11 @@ public class Gateway
           
       public RadioStation GetRadiostatinByID(int id)
      {
+
      for(int i=0;i<radioStations.size();i++)
      {
+         
+
      if(radioStations.get(i).ID==id)return radioStations.get(i);
      }
      return null;
@@ -334,7 +337,7 @@ public class Gateway
                   
                  long timenow=Calendar.getInstance().getTimeInMillis(); 
               if( (radioStations.get(i).IsOnline)  )
-                  if(((timenow-radioStations.get(i).registerTime)/1000)>3000)
+                  if(((timenow-radioStations.get(i).registerTime)/1000)>3700)
                   {
                       if( (radioStations.get(i).timeToLineBeforeOffline==0)) // Если истекло время опроса РC
                       {    

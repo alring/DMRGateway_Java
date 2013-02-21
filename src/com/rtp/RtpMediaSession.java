@@ -84,6 +84,7 @@ public class RtpMediaSession implements RtpListener
        
     //    soundInOut.closeLines();
         soundInOut.OpenMicLine();
+        
         direction=0;
         sessionId=Calendar.getInstance().getTimeInMillis(); 
         IsActive=true;
@@ -102,6 +103,7 @@ public class RtpMediaSession implements RtpListener
             soundInOut.OpenSpeakLine();
             try
             {
+        
         rtpSession = rtpManager.createRtpSession(myRtpRecvPort);
 	rtpSession.addRtpListener(this);
 	rtpSession.receiveRTPPackets();

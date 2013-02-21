@@ -114,12 +114,13 @@ public class RCCService
 
   /*--------------------------------------------------------------------------*/
 
-     public void MakeRemoteMonitorToRadio(String gatewayIP,int toid)    //прослушка
+     public void MakeRemoteMonitorToRadio(String gatewayIP,int toid, String dispip)    //прослушка
          {
                  
                RadioStationPC statioPC= gateway.GetRadiostatinPCByIP(gatewayIP);
-               for(int i=0;i<3;i++)                           
-               {
+               logger.warn("monitor");
+               //for(int i=0;i<1;i++)                           
+             //  {
     
                   RCCPacket packet = new RCCPacket();
                   byte[] pack =packet.GenerateRemoteMonitor(toid);
@@ -127,15 +128,16 @@ public class RCCService
                   {
                       DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCByIP(gatewayIP).RealIPAdress),Port);
                       socket.send(sendPacket);
-                      Thread.sleep(1000);
+                      Thread.sleep(17000);
                   }
                   catch(Exception ex)
                   {
                        logger.error(ex);
                   }  
                if(statioPC.status.remotemonitorOK){statioPC.status.remotemonitorOK=false;return;} 
-             }     
-             gateway.client.SendMakeRemoteMonitorToServer(toid, gatewayIP, 0);
+             //}     
+               logger.warn("send no monitor");
+             gateway.client.SendMakeRemoteMonitorToServer(toid, dispip, 0);
          }   
   
    /*--------------------------------------------------------------------------*/
@@ -144,8 +146,8 @@ public class RCCService
         {
             
               RadioStationPC statioPC= gateway.GetRadiostatinPCByIP(gatewayIP);
-              for(int i=0;i<3;i++)                           
-               {
+             // for(int i=0;i<3;i++)                           
+              // {
     
                   RCCPacket packet = new RCCPacket();
                   byte[] pack =packet.GenerateKill(toid);
@@ -153,14 +155,14 @@ public class RCCService
                   {
                       DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCByIP(gatewayIP).RealIPAdress),Port);
                       socket.send(sendPacket);
-                      Thread.sleep(1000);
+                      Thread.sleep(17000);
                   }
                   catch(Exception ex)
                   {
                     logger.error(ex);
                   }
                  if(statioPC.status.killreplyOK){statioPC.status.killreplyOK=false;logger.warn("выход по получению ответа");return;} 
-              }      
+           //   }      
               logger.warn("dispip " + dispip);
               gateway.client.SendMakeKillToServer(toid, dispip, 0);       
         }  
@@ -216,22 +218,22 @@ public class RCCService
             
            RadioStationPC statioPC= gateway.GetRadiostatinPCByIP(gatewayIP);
            statioPC.status.stopDeferredKill = true;
-             for(int i=0;i<3;i++)                           
-             {  
+             //for(int i=0;i<3;i++)                           
+            // {  
                RCCPacket packet = new RCCPacket();
                byte[] pack =packet.GenerateLive(toid);
                try
                {
                 DatagramPacket sendPacket= new DatagramPacket(pack, pack.length,InetAddress.getByName(gateway.GetRadiostatinPCByIP(gatewayIP).RealIPAdress),Port);
                 socket.send(sendPacket);
-                Thread.sleep(1000);
+                Thread.sleep(17000);
                }
                catch(Exception ex)
                {
                 logger.error(ex);
                }
                if(statioPC.status.livereplyOK){statioPC.status.livereplyOK=false;return;} 
-             }    
+             //}    
             gateway.client.SendMakeLiveToServer(toid, dispip, 0); 
         }  
    
@@ -444,7 +446,7 @@ public class RCCService
                       
                     if(packet.GetOperation()==RCCPacket.Operation.REMOTE_MONITOR_REPLY)
                     {
-                        
+                        logger.warn("makeremotemonitor reply");
                        if(packet.GetRemoteMonitorResult()==RCCPacket.CallReplyStatus.SUCCES)
                        {
                          statioPC.status.remotemonitorOK=true;
@@ -569,7 +571,10 @@ public class RCCService
                               {
                                 int target=packet.GetCallTargetExtPTT();  
                                 int type=packet.GetCallTypeExtPTT();
+                                if(type==1)// óдостовермяемся
+                                {
                                 gateway.client.SendCallToServer(radioStationPC.ID, target, type, radioStationPC.IPAdress,2);
+                                }
                               }
                               /*
                               int type = packet.GetCallTypeExtPTT();
@@ -728,7 +733,19 @@ public class RCCService
       public void run()
       {
           RadioStationPC radioPC = gateway.GetRadiostatinPCByIP(ipAddr); 
-          while(!radioPC.status.pttPressACK);
+          int counter = 30;
+          boolean flag = false;
+          for(int i = 0;i<100;i++)
+          {
+              if(radioPC.status.pttPressACK==true)break;
+              logger.warn("PTT не нажата");
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException ex) {
+                    java.util.logging.Logger.getLogger(RCCService.class.getName()).log(Level.SEVERE, null, ex);
+                }
+          }
+          
           RCCPacket packet = new RCCPacket();
           byte[] pack = packet.GenerateReleasePTT();
           try
